@@ -4,7 +4,6 @@ import z from 'zod'
 
 export enum COLLECTION {
     TRANSACTION = 'transaction',
-    TRANSACTION_IN_CURRENCY = 'transaction_in_currency',
     FIFO_IN_CURRENCY = 'fifo_in_currency',
 }
 

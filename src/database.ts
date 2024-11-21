@@ -4,7 +4,7 @@ import type { DatabaseMap } from './model/common.ts'
 const databases: DatabaseMap = {}
 
 export const getDatabasePath = () => {
-    return `${Deno.env.get('HOME')}/.fifo-calc`
+    return `${Deno.env.get('HOME')}/.fifo-calc/data`
 }
 
 export const getDatabaseFilePath = (dbName: string) => {
@@ -57,7 +57,7 @@ export const persistDatabases = async () => {
         }
     } catch (error) {
         if (error instanceof Deno.errors.NotFound) {
-            await Deno.mkdir(dbDir)
+            await Deno.mkdir(dbDir, { recursive: true })
         } else {
             throw error
         }
@@ -69,7 +69,7 @@ export const persistDatabases = async () => {
 }
 
 export const restoreDatabase = async (year: string): Promise<Database> => {
-    const path = `${Deno.env.get('HOME')}/.fifo-calc/${year}.json`
+    const path = `${getDatabasePath()}/${year}.json`
 
     try {
         const fileInfo = await Deno.stat(path)

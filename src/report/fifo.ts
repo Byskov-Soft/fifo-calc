@@ -1,17 +1,13 @@
 import { format, parseISO } from 'date-fns'
-import { getDataBase, restoreDatabases } from './database.ts'
-import { COLLECTION } from './model/common.ts'
-import {
-    TRANSACTION_TYPE,
-    TransactionInCurrency,
-    type TransactionProfitInCurrency,
-} from './model/transaction.ts'
+import { getDataBase, restoreDatabases } from '../database.ts'
+import { COLLECTION } from '../model/common.ts'
+import { Transaction, TRANSACTION_TYPE, type TransactionProfit } from '../model/transaction.ts'
 
 function processSellTransactions(
-    transactions: TransactionInCurrency[],
-): TransactionProfitInCurrency[] {
+    transactions: Transaction[],
+): TransactionProfit[] {
     const buyQueue: Array<{ amount: number; cost_per_item: number; total_cost: number }> = []
-    const sellRecords: TransactionProfitInCurrency[] = []
+    const sellRecords: TransactionProfit[] = []
 
     transactions.forEach((tx) => {
         if (tx.type === TRANSACTION_TYPE.B) {
@@ -39,6 +35,7 @@ function processSellTransactions(
 
                     sellRecords.push({
                         date: tx.date,
+                        symbol: tx.symbol,
                         amount: currentBuy.amount,
                         sell_cost: parseFloat(sellCost.toFixed(4)),
                         cur_cost_per_item: parseFloat(tx.cur_price_per_item.toFixed(4)),
@@ -64,6 +61,7 @@ function processSellTransactions(
 
                     sellRecords.push({
                         date: tx.date,
+                        symbol: tx.symbol,
                         amount: remainingAmount,
                         sell_cost: parseFloat(partialSellCost.toFixed(4)),
                         cur_cost_per_item: parseFloat(tx.cur_price_per_item.toFixed(4)),
@@ -85,15 +83,20 @@ function processSellTransactions(
     return sellRecords
 }
 
-export const createFifoByCurrency = async (year: string, symbol: string, currency: string) => {
+export const createFifoReport = async (year: string, currency: string, symbol?: string) => {
     await restoreDatabases()
     const db = getDataBase(year)
-    const dbItems = db.getCollection(COLLECTION.TRANSACTION_IN_CURRENCY).getByAttribute([])
 
-    const transactions = dbItems
-        .map((item) => TransactionInCurrency.parse(item.object()))
-        .filter((t) => t.symbol === symbol)
+    const dbItems = db.getCollection(COLLECTION.TRANSACTION).getByAttribute(
+        symbol
+            ? [{
+                name: 'symbol',
+                value: symbol.toUpperCase(),
+            }]
+            : [],
+    )
 
+    const transactions = dbItems.map((item) => Transaction.parse(item.object()))
     const cur = currency.toUpperCase()
     const sellRecords = processSellTransactions(transactions)
 
@@ -116,7 +119,7 @@ export const createFifoByCurrency = async (year: string, symbol: string, currenc
 
         console.log([
             dateStr,
-            symbol,
+            c.symbol,
             c.amount,
             c.sell_cost,
             c.cur_original_buy_cost,
