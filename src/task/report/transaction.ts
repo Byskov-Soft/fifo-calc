@@ -1,10 +1,10 @@
-import { getDataBase, restoreDatabases } from '../database.ts'
-import { COLLECTION } from '../model/common.ts'
-import { Transaction } from '../model/transaction.ts'
+import { COLLECTION, type Year } from '../../model/common.ts'
+import { Transaction } from '../../model/transaction.ts'
+import { getDataBase, restoreDatabases } from '../../persistence/database.ts'
 
-export const reportTransactions = async (year: string, currency: string, symbol?: string) => {
+export const reportTransactions = async (currency: string, year: Year, symbol?: string) => {
     await restoreDatabases()
-    const db = getDataBase(year)
+    const db = getDataBase(year.toString())
 
     const dbItems = db.getCollection(COLLECTION.TRANSACTION).getByAttribute(
         symbol
@@ -20,33 +20,33 @@ export const reportTransactions = async (year: string, currency: string, symbol?
 
     console.log([
         'Date',
+        'Exchange',
         'Type',
         'Symbol',
         'Cost (USD)',
-        'Amount',
+        'Number of items',
         'Rate (USD)',
         'Symbol Fee',
         'USD Fee',
         `Cost (${cur})`,
         `Price per item (${cur})`,
         `Fee (${cur})`,
-        `Fee per item (${cur})`,
     ].join(','))
 
     transactions.forEach((t) => {
         console.log([
             t.date,
+            t.exchange,
             t.type,
             t.symbol,
             t.usd_cost,
-            t.amount,
-            t.usd_rate,
+            t.item_count,
+            t.usd_conversion_rate,
             t.symbol_fee,
             t.usd_fee,
             t.cur_cost,
             t.cur_price_per_item,
             t.cur_fee,
-            t.cur_fee_per_item,
         ].join(','))
     })
 }

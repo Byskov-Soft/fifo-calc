@@ -1,42 +1,44 @@
 import { format, parseISO } from 'date-fns'
-import { getDataBase, restoreDatabases } from '../database.ts'
-import { COLLECTION } from '../model/common.ts'
-import { Transaction, TRANSACTION_TYPE, type TransactionProfit } from '../model/transaction.ts'
+import { COLLECTION, type Year } from '../../model/common.ts'
+import { Transaction, TRANSACTION_TYPE, type TransactionProfit } from '../../model/transaction.ts'
+import { getDataBase, restoreDatabases } from '../../persistence/database.ts'
 
 function processSellTransactions(
     transactions: Transaction[],
 ): TransactionProfit[] {
-    const buyQueue: Array<{ amount: number; cost_per_item: number; total_cost: number }> = []
+    const buyQueue: Array<{ item_count: number; cost_per_item: number; total_cost: number }> = []
     const sellRecords: TransactionProfit[] = []
 
     transactions.forEach((tx) => {
         if (tx.type === TRANSACTION_TYPE.B) {
             buyQueue.push({
-                amount: tx.amount,
+                item_count: tx.item_count,
                 cost_per_item: tx.cur_price_per_item,
                 total_cost: tx.cur_cost,
             })
         } else if (tx.type === TRANSACTION_TYPE.S) {
-            let remainingAmount = tx.amount
-            const feePerItem = tx.cur_fee / tx.amount
+            let remainingcount = tx.item_count
+            const feePerItem = tx.cur_fee / tx.item_count
+            console.log('remainingcount', remainingcount)
 
-            while (remainingAmount > 0 && buyQueue.length > 0) {
+            while (remainingcount > 0 && buyQueue.length > 0) {
                 const currentBuy = buyQueue[0]
 
-                if (currentBuy.amount <= remainingAmount) {
-                    const sellCost = currentBuy.amount * tx.cur_price_per_item
+                if (currentBuy.item_count <= remainingcount) {
+                    const sellCost = currentBuy.item_count * tx.cur_price_per_item
                     const profitOrLoss = sellCost - currentBuy.total_cost
 
                     const buyingFee = parseFloat(
-                        (currentBuy.amount * (tx.cur_fee / tx.amount)).toFixed(4),
+                        (currentBuy.item_count * (tx.cur_fee / tx.item_count)).toFixed(4),
                     )
 
-                    const sellingFee = parseFloat((currentBuy.amount * feePerItem).toFixed(4))
+                    const sellingFee = parseFloat((currentBuy.item_count * feePerItem).toFixed(4))
 
                     sellRecords.push({
                         date: tx.date,
+                        exchange: tx.exchange,
                         symbol: tx.symbol,
-                        amount: currentBuy.amount,
+                        item_count: currentBuy.item_count,
                         sell_cost: parseFloat(sellCost.toFixed(4)),
                         cur_cost_per_item: parseFloat(tx.cur_price_per_item.toFixed(4)),
                         cur_original_buy_cost: parseFloat(currentBuy.total_cost.toFixed(4)),
@@ -46,23 +48,24 @@ function processSellTransactions(
                         cur_total_fee: parseFloat((buyingFee + sellingFee).toFixed(4)),
                     })
 
-                    remainingAmount -= currentBuy.amount
+                    remainingcount -= currentBuy.item_count
                     buyQueue.shift()
                 } else {
-                    const partialSellCost = remainingAmount * tx.cur_price_per_item // Exclude selling fees
-                    const partialBuyCost = remainingAmount * currentBuy.cost_per_item // Exclude buying fees
+                    const partialSellCost = remainingcount * tx.cur_price_per_item
+                    const partialBuyCost = remainingcount * currentBuy.cost_per_item
                     const profitOrLoss = partialSellCost - partialBuyCost
 
                     const buyingFee = parseFloat(
-                        (remainingAmount * (tx.cur_fee / tx.amount)).toFixed(4),
+                        (remainingcount * (tx.cur_fee / tx.item_count)).toFixed(4),
                     )
 
-                    const sellingFee = parseFloat((remainingAmount * feePerItem).toFixed(4))
+                    const sellingFee = parseFloat((remainingcount * feePerItem).toFixed(4))
 
                     sellRecords.push({
                         date: tx.date,
+                        exchange: tx.exchange,
                         symbol: tx.symbol,
-                        amount: remainingAmount,
+                        item_count: remainingcount,
                         sell_cost: parseFloat(partialSellCost.toFixed(4)),
                         cur_cost_per_item: parseFloat(tx.cur_price_per_item.toFixed(4)),
                         cur_original_buy_cost: parseFloat(partialBuyCost.toFixed(4)),
@@ -72,10 +75,21 @@ function processSellTransactions(
                         cur_total_fee: parseFloat((buyingFee + sellingFee).toFixed(4)),
                     })
 
-                    currentBuy.amount -= remainingAmount
+                    currentBuy.item_count -= remainingcount
                     currentBuy.total_cost -= partialBuyCost
-                    remainingAmount = 0
+                    remainingcount = 0
                 }
+            }
+
+            if (remainingcount > 0) {
+                console.error(
+                    [
+                        remainingcount.toFixed(2),
+                        ` ${tx.symbol} were not matched with a buy transaction.\n`,
+                        'Sell transaction:\n\n',
+                        JSON.stringify(tx, null, 2),
+                    ].join(''),
+                )
             }
         }
     })
@@ -83,9 +97,9 @@ function processSellTransactions(
     return sellRecords
 }
 
-export const createFifoReport = async (year: string, currency: string, symbol?: string) => {
+export const reportFifo = async (currency: string, year: Year, symbol?: string) => {
     await restoreDatabases()
-    const db = getDataBase(year)
+    const db = getDataBase(year.toString())
 
     const dbItems = db.getCollection(COLLECTION.TRANSACTION).getByAttribute(
         symbol
@@ -102,8 +116,9 @@ export const createFifoReport = async (year: string, currency: string, symbol?: 
 
     console.log([
         'Date',
+        'Exchange',
         'Symbol',
-        'Amount',
+        'Item Count',
         `Sell cost (${cur})`,
         `Original buy cost (${cur})`,
         `Profit (${cur})`,
@@ -119,8 +134,9 @@ export const createFifoReport = async (year: string, currency: string, symbol?: 
 
         console.log([
             dateStr,
+            c.exchange,
             c.symbol,
-            c.amount,
+            c.item_count,
             c.sell_cost,
             c.cur_original_buy_cost,
             c.cur_profit,

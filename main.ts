@@ -1,19 +1,25 @@
-import { reset } from './src/database.ts'
-import { importTransactions } from './src/import/index.ts'
-import { Year } from './src/model/common.ts'
-import { createFifoReport } from './src/report/fifo.ts'
-import { getUniqueTransactionSymbols } from './src/report/symbols.ts'
-import { reportTransactions } from './src/report/transaction.ts'
+import { reset } from './src/persistence/database.ts'
+import { convert, convertTasks } from './src/task/convert/index.ts'
+import { importData, importTasks } from './src/task/import/index.ts'
+import { report, reportTasks } from './src/task/report/index.ts'
 
 enum TASK {
+    CONVERT = 'convert',
     IMPORT = 'import',
-    TRANS = 'trans-report',
-    FIFO = 'fifo-report',
-    SYMBOLS = 'symbols-report',
+    REPORT = 'report',
     RESET = 'reset',
+    HELP = 'help',
 }
 
-const usage = `fifo-calc <import|trans-report|fifo-report|symbols-report> <options>`
+const fifoUsage = [
+    'fifo-calc <task> <options>',
+    '',
+    'Tasks:',
+    ...Object.values(convertTasks).map((task) => `  ${task}`),
+    ...Object.values(importTasks).map((task) => `  ${task}`),
+    ...Object.values(reportTasks).map((task) => `  ${task}`),
+    '  reset',
+].join('\n')
 
 if (!Deno.env.get('HOME')) {
     console.error('HOME environment variable not found')
@@ -21,64 +27,27 @@ if (!Deno.env.get('HOME')) {
 }
 
 switch (Deno.args[0]) {
+    case TASK.CONVERT: {
+        await convert()
+        break
+    }
     case TASK.IMPORT: {
-        const csvFilePath = Deno.args[1]
-        const currency = Deno.args[2]
-
-        if (!csvFilePath) {
-            console.error('Missing CSV file path')
-            console.log(`Usage: fifo-calc import <csv-file-path> <taxable-currency>`)
-            Deno.exit(1)
-        }
-
-        await importTransactions(csvFilePath, currency)
+        await importData()
         break
     }
-    case TASK.TRANS: {
-        const year = Deno.args[1]
-        const currency = Deno.args[2]
-        const symbol = Deno.args[3]
-
-        if (!year || !currency) {
-            console.error('Missing year or taxable-currency')
-            console.log(`Usage: fifo-calc trans-report <year> <taxable-currency> [<symbol>]`)
-            Deno.exit(1)
-        }
-
-        reportTransactions(Year.parse(year).toString(), currency, symbol)
-        break
-    }
-    case TASK.FIFO: {
-        const year = Deno.args[1]
-        const currency = Deno.args[2]
-        const symbol = Deno.args[3]
-
-        if (!year || !currency) {
-            console.error('Missing year, symbol or taxable-currency')
-            console.log(`Usage: fifo-calc fifo-report <year> <taxable-currency> [<symbol>]`)
-            Deno.exit(1)
-        }
-
-        await createFifoReport(Year.parse(year).toString(), currency, symbol)
-        break
-    }
-    case TASK.SYMBOLS: {
-        const year = Deno.args[1]
-
-        if (!year) {
-            console.error('Missing year')
-            console.log(`Usage: fifo-calc symbols <year>`)
-            Deno.exit(1)
-        }
-
-        await getUniqueTransactionSymbols(year)
+    case TASK.REPORT: {
+        await report()
         break
     }
     case TASK.RESET: {
         await reset()
         break
     }
+    case TASK.HELP: {
+        console.log(`\n${fifoUsage}\n`)
+        break
+    }
     default:
-        console.error('Invalid task')
-        console.log(`Usage: ${usage}`)
+        console.error('\nInvalid task')
+        console.log(`Usage: ${fifoUsage}\n`)
 }

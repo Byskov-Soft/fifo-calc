@@ -12,11 +12,5 @@
   "exports": {
     ".": "./main.ts"
   },
-  "imports": {
-    "@std/assert": "jsr:@std/assert@1",
-    "@bysk/jsonfile-db": "jsr:@bysk/jsonfile-db@0.1.9",
-    "@std/csv/parse": "jsr:@std/csv/parse",
-    "date-fns": "npm:date-fns@3.0.6",
-    "zod": "https://deno.land/x/zod@v3.23.8/mod.ts"
-  }
+  "importMap": "./import_map.json"
 }

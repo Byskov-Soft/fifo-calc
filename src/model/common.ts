@@ -2,13 +2,7 @@ import type { Database } from '@bysk/jsonfile-db'
 import { parseISO } from 'date-fns'
 import z from 'zod'
 
-export enum COLLECTION {
-    TRANSACTION = 'transaction',
-    FIFO_IN_CURRENCY = 'fifo_in_currency',
-}
-
-export type DatabaseMap = { [name: string]: Database }
-
+// Dates
 export const Year = z.string().transform((v) => {
     const value = parseInt(v)
 
@@ -34,3 +28,18 @@ export const ISO8601DateString = z.string().refine(
 )
 
 export type ISO8601DateString = z.TypeOf<typeof ISO8601DateString>
+
+// Database
+export enum COLLECTION {
+    TRANSACTION = 'transaction',
+    FIFO_IN_CURRENCY = 'fifo_in_currency',
+}
+
+export const dbFileExtension = '.db.json'
+export type DatabaseMap = { [name: string]: Database }
+
+// Conversion rates
+export const rateFileExtension = '.rate.json'
+
+export const RateRecord = z.record(ISO8601DateString, z.number())
+export type RateRecord = z.TypeOf<typeof RateRecord>
