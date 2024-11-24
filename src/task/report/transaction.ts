@@ -1,8 +1,30 @@
-import { COLLECTION, type Year } from '../../model/common.ts'
+import { getArgValue, setUsage, showUsageAndExit } from '../../cmdOptions.ts'
+import { COLLECTION, type Usage } from '../../model/common.ts'
 import { Transaction } from '../../model/transaction.ts'
 import { getDataBase, restoreDatabases } from '../../persistence/database.ts'
 
-export const reportTransactions = async (currency: string, year: Year, symbol?: string) => {
+export const TRANSACTIONS_REPORT_TYPE = 'transactions'
+
+export const usage: Usage = {
+    option: `report --type ${TRANSACTIONS_REPORT_TYPE}`,
+    arguments: [
+        '--currency <taxable-currency>',
+        '--year <year>',
+        '[--symbol <symbol>]',
+    ],
+}
+
+export const reportTransactions = async () => {
+    setUsage(usage)
+    const currency = getArgValue('currency')
+    const _year = getArgValue('year')
+    const symbol = getArgValue('symbol')
+
+    if (!currency || !_year) {
+        showUsageAndExit()
+    }
+
+    const year = parseInt(_year)
     await restoreDatabases()
     const db = getDataBase(year.toString())
 

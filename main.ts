@@ -1,7 +1,9 @@
+import { parseAppOptions, setUsage, showUsageAndExit } from './src/cmdOptions.ts'
+import type { Usage } from './src/model/common.ts'
 import { reset } from './src/persistence/database.ts'
-import { convert, convertTasks } from './src/task/convert/index.ts'
-import { importData, importTasks } from './src/task/import/index.ts'
-import { report, reportTasks } from './src/task/report/index.ts'
+import { convertTasks } from './src/task/convert/index.ts'
+import { importData } from './src/task/import/index.ts'
+import { report } from './src/task/report/index.ts'
 
 enum TASK {
     CONVERT = 'convert',
@@ -11,24 +13,23 @@ enum TASK {
     HELP = 'help',
 }
 
-const fifoUsage = [
-    'fifo-calc <task> <options>',
-    '',
-    'Tasks:',
-    ...Object.values(convertTasks).map((task) => `  ${task}`),
-    ...Object.values(importTasks).map((task) => `  ${task}`),
-    ...Object.values(reportTasks).map((task) => `  ${task}`),
-    '  reset',
-].join('\n')
+parseAppOptions()
 
 if (!Deno.env.get('HOME')) {
     console.error('HOME environment variable not found')
     Deno.exit(1)
 }
 
+export const usage: Usage = {
+    option: '(convert | import | report | reset) <options>',
+    arguments: [],
+}
+
+setUsage(usage)
+
 switch (Deno.args[0]) {
     case TASK.CONVERT: {
-        await convert()
+        await convertTasks()
         break
     }
     case TASK.IMPORT: {
@@ -44,10 +45,9 @@ switch (Deno.args[0]) {
         break
     }
     case TASK.HELP: {
-        console.log(`\n${fifoUsage}\n`)
         break
     }
-    default:
-        console.error('\nInvalid task')
-        console.log(`Usage: ${fifoUsage}\n`)
+    default: {
+        showUsageAndExit()
+    }
 }

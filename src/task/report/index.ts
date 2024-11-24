@@ -1,79 +1,35 @@
-import { Year } from '../../model/common.ts'
-import { showUsageAndExit } from '../../util/usage.ts'
-import { reportFifo } from './fifo.ts'
-import { reportSymbols } from './symbols.ts'
-import { reportTransactions } from './transaction.ts'
+import { getArgValue, setUsage, showUsageAndExit } from '../../cmdOptions.ts'
+import type { Usage } from '../../model/common.ts'
+import { FIFO_REPORT_TYPE, reportFifo } from './fifo.ts'
+import { reportSymbols, SYMBOLS_REPORT_TYPE } from './symbols.ts'
+import { reportTransactions, TRANSACTIONS_REPORT_TYPE } from './transaction.ts'
 
-enum REPORT_TYPE {
-    TRANSACTIONS = 'transactions',
-    FIFO = 'fifo',
-    SYMBOLS = 'symbols',
-}
-
-const reportUsage = [
-    '',
-    'Usage: fifo-calc report <report-type> <options>',
-    '',
-    `Valid report types: ${Object.values(REPORT_TYPE).join(', ')}\n`,
-    '',
-].join('\n')
-
-export const reportTasks = {
-    'transactions': 'report transactions <taxable-currency> <year> [<symbol>]',
-    'fifo': 'report fifo <taxable-currency> <year> [<symbol>]',
-    'symbols': 'report symbols <year>',
+export const usage: Usage = {
+    option: 'report',
+    arguments: [
+        `--type (${FIFO_REPORT_TYPE} | ${SYMBOLS_REPORT_TYPE} | ${TRANSACTIONS_REPORT_TYPE})`,
+    ],
 }
 
 export const report = async () => {
-    const reportType = Deno.args[1]
-
-    if (!reportType) {
-        console.error('\nMissing report type')
-        console.error(reportUsage)
-        Deno.exit(1)
-    }
+    setUsage(usage)
+    const reportType = getArgValue('type') || ''
 
     switch (reportType) {
-        case REPORT_TYPE.TRANSACTIONS: {
-            const currency = Deno.args[2]
-            const year = Deno.args[3]
-            const symbol = Deno.args[4]
-
-            if (!currency || !year) {
-                console.error('\nMissing taxable-currency or year\n')
-                showUsageAndExit(reportTasks['transactions'])
-            }
-
-            await reportTransactions(currency, Year.parse(year), symbol)
+        case TRANSACTIONS_REPORT_TYPE: {
+            await reportTransactions()
             break
         }
-        case REPORT_TYPE.FIFO: {
-            const currency = Deno.args[2]
-            const year = Deno.args[3]
-            const symbol = Deno.args[4]
-
-            if (!currency || !year) {
-                console.error('\nMissing taxable-currency or year\n')
-                showUsageAndExit(reportTasks['fifo'])
-            }
-
-            await reportFifo(currency, Year.parse(year), symbol)
+        case FIFO_REPORT_TYPE: {
+            await reportFifo()
             break
         }
-        case REPORT_TYPE.SYMBOLS: {
-            const year = Deno.args[2]
-
-            if (!year) {
-                console.error('\nMissing year\n')
-                showUsageAndExit(reportTasks['symbols'])
-            }
-
-            await reportSymbols(Year.parse(year))
+        case SYMBOLS_REPORT_TYPE: {
+            await reportSymbols()
             break
         }
         default: {
-            console.error(`\nInvalid report type "${reportType}"\n`)
-            Deno.exit(1)
+            showUsageAndExit()
         }
     }
 }

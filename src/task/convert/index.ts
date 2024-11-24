@@ -1,44 +1,62 @@
-import { showUsageAndExit } from '../../util/usage.ts'
+import { getArgValue, setUsage, showUsageAndExit } from '../../cmdOptions.ts'
+import type { Usage } from '../../model/common.ts'
 import { convertPionexTrackerCsv } from './fromPionexTracker.ts'
 import { convertPionexTradingCsv } from './fromPionexTrading.ts'
 
-enum EXCHANGE {
+enum INPUT_TYPE {
     PIONEX_TRADING = 'pionex-trading', // trading.csv
     PIONEX_TRACKER = 'pionex-tracker', // for-cointracker.csv
     BYBIT = 'bybit',
 }
 
-export const convertTasks = {
-    'convert': 'convert <taxable-currency> <exchange> <input-csv-file> <output-csv-file>',
+const crashMessage =
+    'If the operation crashes, check that the input file matches the correct type (see --type option).\n'
+
+export const usage: Usage = {
+    option: 'convert',
+    arguments: [
+        '--type (pionex-trading | pionex-tracker | bybit)',
+        '--currency <taxable-currency>',
+        '--input <input-csv-file>',
+        '--output <output-csv-file>',
+    ],
 }
 
-export const convert = async () => {
-    const currency = Deno.args[1]
-    const exchange = Deno.args[2]
-    const inputFilePath = Deno.args[3]
-    const outputFilePath = Deno.args[4]
+export const convertTasks = async () => {
+    setUsage(usage)
+    const inputType = getArgValue('type')
+    const currency = getArgValue('currency')
+    const inputFilePath = getArgValue('input')
+    const outputFilePath = getArgValue('output')
 
-    if (!currency || !exchange || !inputFilePath || !outputFilePath) {
-        console.error('\nMissing currency, exchange, input-csv-file or output-csv-file\n')
-        showUsageAndExit(convertTasks['convert'])
+    if (!currency || !inputType || !inputFilePath || !outputFilePath) {
+        showUsageAndExit({
+            extras: [crashMessage].join('\n'),
+            exitWithError: true,
+        })
     }
 
-    switch (exchange) {
-        case EXCHANGE.PIONEX_TRADING: {
+    switch (inputType) {
+        case INPUT_TYPE.PIONEX_TRADING: {
             await convertPionexTradingCsv(currency, inputFilePath, outputFilePath)
             break
         }
-        case EXCHANGE.PIONEX_TRACKER: {
+        case INPUT_TYPE.PIONEX_TRACKER: {
             convertPionexTrackerCsv(currency, inputFilePath, outputFilePath)
             break
         }
-        case EXCHANGE.BYBIT: {
+        case INPUT_TYPE.BYBIT: {
             break
         }
         default: {
-            console.error(`\nInvalid exchange "${exchange}"`)
-            console.log(`Supported exchanges: ${Object.values(EXCHANGE).join(', ')}\n`)
-            showUsageAndExit(convertTasks['convert'])
+            showUsageAndExit({
+                extras: [
+                    `Invalid conversion type "${inputType}"`,
+                    `Supported types: ${Object.values(INPUT_TYPE).join(', ')}\n`,
+                    crashMessage,
+                ].join('\n'),
+                exitWithError: true,
+            })
         }
     }
 }

@@ -100,7 +100,6 @@ export const createEcbEurUsdRates = async (xmlFilePath: string, year: Year) => {
         // Parse the XML data and convert it to JSON
         const { records, firstDate, lastDate } = parseDatesAndRateXML(xmlData, year)
         const rateTable = addMissingDays(records, firstDate, lastDate, year)
-        console.log('RATE TABLE', rateTable)
         const jsonData = JSON.stringify(rateTable, null, 2)
 
         // Write the JSON data to a file

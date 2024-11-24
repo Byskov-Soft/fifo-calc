@@ -1,7 +1,10 @@
 import { format, parseISO } from 'date-fns'
-import { COLLECTION, type Year } from '../../model/common.ts'
+import { getArgValue, setUsage, showUsageAndExit } from '../../cmdOptions.ts'
+import { COLLECTION, type Usage } from '../../model/common.ts'
 import { Transaction, TRANSACTION_TYPE, type TransactionProfit } from '../../model/transaction.ts'
 import { getDataBase, restoreDatabases } from '../../persistence/database.ts'
+
+export const FIFO_REPORT_TYPE = 'fifo'
 
 function processSellTransactions(
     transactions: Transaction[],
@@ -19,7 +22,6 @@ function processSellTransactions(
         } else if (tx.type === TRANSACTION_TYPE.S) {
             let remainingcount = tx.item_count
             const feePerItem = tx.cur_fee / tx.item_count
-            console.log('remainingcount', remainingcount)
 
             while (remainingcount > 0 && buyQueue.length > 0) {
                 const currentBuy = buyQueue[0]
@@ -86,9 +88,10 @@ function processSellTransactions(
                     [
                         remainingcount.toFixed(2),
                         ` ${tx.symbol} were not matched with a buy transaction.\n`,
-                        'Sell transaction:\n\n',
+                        'Sell transaction:\n',
                         JSON.stringify(tx, null, 2),
                     ].join(''),
+                    '\n',
                 )
             }
         }
@@ -97,7 +100,26 @@ function processSellTransactions(
     return sellRecords
 }
 
-export const reportFifo = async (currency: string, year: Year, symbol?: string) => {
+export const usage: Usage = {
+    option: `report --type ${FIFO_REPORT_TYPE}`,
+    arguments: [
+        '--currency <taxable-currency>',
+        '--year <year>',
+        '[--symbol <symbol>]',
+    ],
+}
+
+export const reportFifo = async () => {
+    setUsage(usage)
+    const currency = getArgValue('currency')
+    const _year = getArgValue('year')
+    const symbol = getArgValue('symbol')
+
+    if (!currency || !_year) {
+        showUsageAndExit()
+    }
+
+    const year = parseInt(_year)
     await restoreDatabases()
     const db = getDataBase(year.toString())
 

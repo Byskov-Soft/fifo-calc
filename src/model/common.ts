@@ -2,6 +2,11 @@ import type { Database } from '@bysk/jsonfile-db'
 import { parseISO } from 'date-fns'
 import z from 'zod'
 
+export interface Usage {
+    option: string
+    arguments: string[]
+}
+
 // Dates
 export const Year = z.string().transform((v) => {
     const value = parseInt(v)
