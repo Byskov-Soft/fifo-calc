@@ -1,10 +1,11 @@
 // Converts from Pionex trading.csv to fifo-calc's format
 import { parse } from '@std/csv/parse'
-import { parse as fnsParse, parseISO } from 'date-fns'
+import { parseISO } from 'date-fns'
 import { all, identity } from 'rambda'
 import { z } from 'zod'
 import { inputColumns, type InputTransaction, TRANSACTION_TYPE } from '../../model/transaction.ts'
 import { getUsdRate, loadRateTable } from '../../persistence/rateTable.ts'
+import { utcDateStringToISO } from '../../util/date.ts'
 
 const pionexTrackerInputColumns = [
     'date',
@@ -18,9 +19,7 @@ const pionexTrackerInputColumns = [
 ]
 
 const PionexTrackerInputRecord = z.object({
-    date: z.string().transform((v: string) =>
-        fnsParse(v, 'MM/dd/yyyy HH:mm:ss', new Date()).toISOString()
-    ),
+    date: z.string().transform((v: string) => utcDateStringToISO(v)),
     received_quantity: z.string().transform((v: string) => parseFloat(v)),
     received_currency: z.string(),
     sent_quantity: z.string().transform((v: string) => parseFloat(v)),

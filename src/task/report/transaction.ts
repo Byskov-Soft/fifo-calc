@@ -10,6 +10,7 @@ export const usage: Usage = {
     arguments: [
         '--currency <taxable-currency>',
         '--year <year>',
+        '--output <output-csv-file>',
         '[--symbol <symbol>]',
     ],
 }
@@ -18,9 +19,10 @@ export const reportTransactions = async () => {
     setUsage(usage)
     const currency = getArgValue('currency')
     const _year = getArgValue('year')
+    const outputFilePath = getArgValue('output')
     const symbol = getArgValue('symbol')
 
-    if (!currency || !_year) {
+    if (!currency || !_year || !outputFilePath) {
         showUsageAndExit()
     }
 
@@ -40,7 +42,7 @@ export const reportTransactions = async () => {
     const transactions = dbItems.map((t) => Transaction.parse(t.object()))
     const cur = currency.toUpperCase()
 
-    console.log([
+    const headers = [
         'Date',
         'Exchange',
         'Type',
@@ -53,10 +55,10 @@ export const reportTransactions = async () => {
         `Cost (${cur})`,
         `Price per item (${cur})`,
         `Fee (${cur})`,
-    ].join(','))
+    ].join(',')
 
-    transactions.forEach((t) => {
-        console.log([
+    const records = transactions.map((t) =>
+        [
             t.date,
             t.exchange,
             t.type,
@@ -69,6 +71,9 @@ export const reportTransactions = async () => {
             t.cur_cost,
             t.cur_price_per_item,
             t.cur_fee,
-        ].join(','))
-    })
+        ].join(',')
+    )
+
+    const outputData = [headers, ...records].join('\n')
+    await Deno.writeTextFile(outputFilePath, outputData)
 }

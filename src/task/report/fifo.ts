@@ -1,8 +1,8 @@
-import { format, parseISO } from 'date-fns'
 import { getArgValue, setUsage, showUsageAndExit } from '../../cmdOptions.ts'
 import { COLLECTION, type Usage } from '../../model/common.ts'
 import { Transaction, TRANSACTION_TYPE, type TransactionProfit } from '../../model/transaction.ts'
 import { getDataBase, restoreDatabases } from '../../persistence/database.ts'
+import { utcDateStringToISO } from '../../util/date.ts'
 
 export const FIFO_REPORT_TYPE = 'fifo'
 
@@ -105,6 +105,7 @@ export const usage: Usage = {
     arguments: [
         '--currency <taxable-currency>',
         '--year <year>',
+        '--output <output-csv-file>',
         '[--symbol <symbol>]',
     ],
 }
@@ -113,9 +114,10 @@ export const reportFifo = async () => {
     setUsage(usage)
     const currency = getArgValue('currency')
     const _year = getArgValue('year')
+    const outputFilePath = getArgValue('output')
     const symbol = getArgValue('symbol')
 
-    if (!currency || !_year) {
+    if (!currency || !_year || !outputFilePath) {
         showUsageAndExit()
     }
 
@@ -136,7 +138,7 @@ export const reportFifo = async () => {
     const cur = currency.toUpperCase()
     const sellRecords = processSellTransactions(transactions)
 
-    console.log([
+    const headers = [
         'Date',
         'Exchange',
         'Symbol',
@@ -148,14 +150,11 @@ export const reportFifo = async () => {
         `Buying fee (${cur})`,
         `Selling fee (${cur})`,
         `Total fee (${cur})`,
-    ].join(','))
+    ].join(',')
 
-    sellRecords.forEach((c) => {
-        const dateIso = parseISO(c.date)
-        const dateStr = format(dateIso, 'yyyy-MM-dd HH:mm:ss')
-
-        console.log([
-            dateStr,
+    const records = sellRecords.map((c) =>
+        [
+            utcDateStringToISO(c.date),
             c.exchange,
             c.symbol,
             c.item_count,
@@ -166,6 +165,9 @@ export const reportFifo = async () => {
             c.cur_buying_fee,
             c.cur_selling_fee,
             c.cur_total_fee,
-        ].join(','))
-    })
+        ].join(',')
+    )
+
+    const outputData = [headers, ...records].join('\n')
+    await Deno.writeTextFile(outputFilePath, outputData)
 }

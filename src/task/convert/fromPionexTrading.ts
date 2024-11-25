@@ -4,6 +4,7 @@ import { parseISO } from 'date-fns'
 import { z } from 'zod'
 import { inputColumns, type InputTransaction, TRANSACTION_TYPE } from '../../model/transaction.ts'
 import { getUsdRate, loadRateTable } from '../../persistence/rateTable.ts'
+import { utcDateStringToISO } from '../../util/date.ts'
 
 const pionexTradingInputColumns = [
     'date',
@@ -18,7 +19,7 @@ const pionexTradingInputColumns = [
 ]
 
 const PionexTradingInputRecord = z.object({
-    date: z.string().transform((v: string) => parseISO(v).toISOString()),
+    date: z.string().transform((v: string) => utcDateStringToISO(v)),
     amount: z.string().transform((v: string) => parseFloat(v)),
     price: z.string().transform((v: string) => parseFloat(v)),
     side: z.enum(['BUY', 'SELL']),

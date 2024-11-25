@@ -1,5 +1,4 @@
 import { addDays, isAfter, parseISO, startOfYear } from 'date-fns'
-
 /*
     Is a date within a buffer period of days before the start of the year?
 */
@@ -32,4 +31,9 @@ export function getDateRange(start: Date, end: Date): Date[] {
     }
 
     return dates
+}
+
+export const utcDateStringToISO = (date: string): string => {
+    const d = date.endsWith('Z') ? date : `${date}Z`
+    return new Date(d).toISOString()
 }

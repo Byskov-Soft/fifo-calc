@@ -10,6 +10,7 @@ import {
     TransctionType,
 } from '../../../model/transaction.ts'
 import { addDocument, persistDatabases, restoreDatabases } from '../../../persistence/database.ts'
+import { utcDateStringToISO } from '../../../util/date.ts'
 import { generateUUID } from '../../../util/uuid.ts'
 
 type RecordsByYear = { [year: string]: InputTransaction[] }
@@ -27,7 +28,7 @@ export const parseCsvToJson = async (csvFilePath: string): Promise<InputTransact
 
     return jsonData.map((row) => {
         return z.object({
-            date: z.string().transform((v: string) => parseISO(v).toISOString()),
+            date: z.string().transform((v: string) => utcDateStringToISO(v)),
             type: TransctionType,
             symbol: z.string().toUpperCase(),
             usd_cost: z.string().transform((v: string) => parseFloat(v)),
