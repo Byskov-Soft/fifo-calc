@@ -3,7 +3,7 @@
     "@std/assert": "jsr:@std/assert@1",
     "@bysk/jsonfile-db": "jsr:@bysk/jsonfile-db@0.1.9",
     "@std/csv/parse": "jsr:@std/csv/parse",
-    "@std/cli/parse-args":"jsr:@std/cli/parse-args",
+    "@std/cli/parse-args": "jsr:@std/cli/parse-args",
     "date-fns": "npm:date-fns@3.0.6",
     "fast-xml-parser": "npm:fast-xml-parser@4.5.0",
     "rambda": "npm:rambda@9.3.0",

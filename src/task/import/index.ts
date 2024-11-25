@@ -4,27 +4,27 @@ import { importRates, RATES_IMPORT_TYPE } from './rates/index.ts'
 import { importTransactions, TRANSACTIONS_IMPORT_TYPE } from './transactions/index.ts'
 
 export const usage: Usage = {
-    option: 'import',
-    arguments: [
-        `--type (${TRANSACTIONS_IMPORT_TYPE} | ${RATES_IMPORT_TYPE})`,
-    ],
+  option: 'import',
+  arguments: [
+    `--type (${TRANSACTIONS_IMPORT_TYPE} | ${RATES_IMPORT_TYPE})`,
+  ],
 }
 
 export const importData = async () => {
-    setUsage(usage)
-    const importType = getArgValue('type') || ''
+  setUsage(usage)
+  const importType = getArgValue('type') || ''
 
-    switch (importType) {
-        case TRANSACTIONS_IMPORT_TYPE: {
-            await importTransactions()
-            break
-        }
-        case RATES_IMPORT_TYPE: {
-            await importRates()
-            break
-        }
-        default: {
-            showUsageAndExit()
-        }
+  switch (importType) {
+    case TRANSACTIONS_IMPORT_TYPE: {
+      await importTransactions()
+      break
     }
+    case RATES_IMPORT_TYPE: {
+      await importRates()
+      break
+    }
+    default: {
+      showUsageAndExit()
+    }
+  }
 }

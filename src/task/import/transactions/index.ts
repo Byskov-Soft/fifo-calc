@@ -5,21 +5,21 @@ import { importExchangeTransactions } from './transactions.ts'
 export const TRANSACTIONS_IMPORT_TYPE = 'transactions'
 
 export const usage: Usage = {
-    option: `import --type ${TRANSACTIONS_IMPORT_TYPE}`,
-    arguments: [
-        '--exchange <exchange-name>',
-        '--input <input-csv-file>',
-    ],
+  option: `import --type ${TRANSACTIONS_IMPORT_TYPE}`,
+  arguments: [
+    '--exchange <exchange-name>',
+    '--input <input-csv-file>',
+  ],
 }
 
 export const importTransactions = () => {
-    setUsage(usage)
-    const exchange = getArgValue('exchange')
-    const csvFilePath = getArgValue('input')
+  setUsage(usage)
+  const exchange = getArgValue('exchange')
+  const csvFilePath = getArgValue('input')
 
-    if (!exchange || !csvFilePath) {
-        showUsageAndExit()
-    }
+  if (!exchange || !csvFilePath) {
+    showUsageAndExit()
+  }
 
-    return importExchangeTransactions(exchange, csvFilePath)
+  return importExchangeTransactions(exchange, csvFilePath)
 }
