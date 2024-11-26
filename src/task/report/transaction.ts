@@ -1,5 +1,5 @@
 import { getArgValue, setUsage, showUsageAndExit } from '../../cmdOptions.ts'
-import { COLLECTION, type Usage } from '../../model/common.ts'
+import { COLLECTION, DB_FIFO, type Usage } from '../../model/common.ts'
 import { Transaction } from '../../model/transaction.ts'
 import { getDataBase, restoreDatabases } from '../../persistence/database.ts'
 
@@ -8,27 +8,26 @@ export const TRANSACTIONS_REPORT_TYPE = 'transactions'
 export const usage: Usage = {
   option: `report --type ${TRANSACTIONS_REPORT_TYPE}`,
   arguments: [
-    '--currency <taxable-currency>',
-    '--year <year>',
-    '--output <output-csv-file>',
-    '[--symbol <symbol>]',
+    '--currency <taxable-currency> : Some columns show values in this currency (converted from USD)',
+    '--output <output-csv-file>    : Output CSV file path',
+    '[--symbol <symbol>]           : Limit to a specific symbol',
+    '[--year-limit <year>]         : Limit to a specific year',
   ],
 }
 
 export const reportTransactions = async () => {
   setUsage(usage)
   const currency = getArgValue('currency')
-  const _year = getArgValue('year')
+  const yearLimit = getArgValue('year-limit')
   const outputFilePath = getArgValue('output')
   const symbol = getArgValue('symbol')
 
-  if (!currency || !_year || !outputFilePath) {
+  if (!currency || !outputFilePath) {
     showUsageAndExit()
   }
 
-  const year = parseInt(_year)
   await restoreDatabases()
-  const db = getDataBase(year.toString())
+  const db = getDataBase(DB_FIFO)
 
   const dbItems = db.getCollection(COLLECTION.TRANSACTION).getByAttribute(
     symbol
@@ -39,7 +38,10 @@ export const reportTransactions = async () => {
       : [],
   )
 
-  const transactions = dbItems.map((t) => Transaction.parse(t.object()))
+  const transactions = dbItems.map((t) => Transaction.parse(t.object())).filter((t) => {
+    return yearLimit ? t.date.startsWith(yearLimit.toString()) : true
+  })
+
   const cur = currency.toUpperCase()
 
   const headers = [
@@ -55,6 +57,8 @@ export const reportTransactions = async () => {
     `Cost (${cur})`,
     `Price per item (${cur})`,
     `Fee (${cur})`,
+    'Cleared',
+    'Row Number',
   ].join(',')
 
   const records = transactions.map((t) =>
@@ -71,6 +75,8 @@ export const reportTransactions = async () => {
       t.cur_cost,
       t.cur_price_per_item,
       t.cur_fee,
+      t.cleared,
+      t.row_num,
     ].join(',')
   )
 

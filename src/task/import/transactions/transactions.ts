@@ -1,14 +1,15 @@
 import { parse } from '@std/csv/parse'
-import { format, parseISO } from 'date-fns'
+import { parseISO } from 'date-fns'
 import { z } from 'zod'
-import { COLLECTION } from '../../../model/common.ts'
+import { adjustRowNumbers } from '../../../misc/index.ts'
+import { COLLECTION, DB_FIFO, type Year } from '../../../model/common.ts'
 import {
   inputColumns,
   type InputTransaction,
   type Transaction,
   TRANSACTION_TYPE,
   TransctionType,
-} from '../../../model/transaction.ts'
+} from '../../../model/index.ts'
 import { addDocument, persistDatabases, restoreDatabases } from '../../../persistence/database.ts'
 import { utcDateStringToISOString } from '../../../util/date.ts'
 import { generateUUID } from '../../../util/uuid.ts'
@@ -16,7 +17,10 @@ import { generateUUID } from '../../../util/uuid.ts'
 type RecordsByYear = { [year: string]: InputTransaction[] }
 const headerLine = inputColumns.join(',')
 
-export const parseCsvToJson = async (csvFilePath: string): Promise<InputTransaction[]> => {
+export const parseCsvToJson = async (
+  csvFilePath: string,
+  yearLimit?: Year,
+): Promise<InputTransaction[]> => {
   const csvData = await Deno.readTextFile(csvFilePath)
 
   if (!csvData.startsWith(headerLine)) {
@@ -36,12 +40,15 @@ export const parseCsvToJson = async (csvFilePath: string): Promise<InputTransact
       usd_conversion_rate: z.string().transform((v: string) => parseFloat(v)),
       symbol_fee: z.string().transform((v: string) => v ? parseFloat(v) : 0),
       usd_fee: z.string().transform((v: string) => v ? parseFloat(v) : 0),
+      cleared: z.string().transform((v: string) => v === 'true'),
+      row_num: z.string().transform((v: string) => v ? parseInt(v) : 0),
     }).parse(row)
+  }).filter((record) => {
+    return yearLimit ? record.date.startsWith(yearLimit.toString()) : true
   })
 }
 
 export const createTransactions = async (
-  year: string,
   exchange: string,
   inputRecordsInYear: InputTransaction[],
 ) => {
@@ -66,30 +73,25 @@ export const createTransactions = async (
       cur_fee,
     }
 
-    addDocument(year, COLLECTION.TRANSACTION, newTrans, generateUUID())
+    console.log(newTrans)
+
+    addDocument(DB_FIFO, COLLECTION.TRANSACTION, newTrans, generateUUID())
     return newTrans
   })
 
-  await persistDatabases()
-  console.log(`\nCreated ${records.length} transactions for ${year}\n`)
+  const persistCount = await persistDatabases()
+
+  if (persistCount) {
+    await adjustRowNumbers(DB_FIFO)
+  }
 }
 
-export const importExchangeTransactions = async (exchange: string, csvFilePath: string) => {
+export const importExchangeTransactions = async (
+  exchange: string,
+  csvFilePath: string,
+  yearLimit?: Year,
+) => {
   await restoreDatabases()
-  const input = await parseCsvToJson(csvFilePath)
-
-  const recordsByYear = input.reduce((acc: RecordsByYear, record: InputTransaction) => {
-    const year = format(parseISO(record.date), 'yyyy')
-
-    if (!acc[year]) {
-      acc[year] = []
-    }
-
-    acc[year].push(record)
-    return acc
-  }, {})
-
-  for (const year in recordsByYear) {
-    await createTransactions(year, exchange, recordsByYear[year])
-  }
+  const input = await parseCsvToJson(csvFilePath, yearLimit)
+  await createTransactions(exchange, input)
 }

@@ -1,5 +1,5 @@
 import { getArgValue, setUsage, showUsageAndExit } from '../../cmdOptions.ts'
-import { COLLECTION, type Usage } from '../../model/common.ts'
+import { COLLECTION, DB_FIFO, type Usage } from '../../model/common.ts'
 import { Transaction, TRANSACTION_TYPE, type TransactionProfit } from '../../model/transaction.ts'
 import { getDataBase, restoreDatabases } from '../../persistence/database.ts'
 import { utcDateStringToISOString } from '../../util/date.ts'
@@ -11,6 +11,7 @@ function processSellTransactions(
 ): TransactionProfit[] {
   const buyQueue: Array<{ item_count: number; cost_per_item: number; total_cost: number }> = []
   const sellRecords: TransactionProfit[] = []
+  let hasSellRecords = false
 
   transactions.forEach((tx) => {
     if (tx.type === TRANSACTION_TYPE.B) {
@@ -20,6 +21,7 @@ function processSellTransactions(
         total_cost: tx.cur_cost,
       })
     } else if (tx.type === TRANSACTION_TYPE.S) {
+      hasSellRecords = true
       let remainingcount = tx.item_count
       const feePerItem = tx.cur_fee / tx.item_count
 
@@ -97,42 +99,40 @@ function processSellTransactions(
     }
   })
 
+  if (!hasSellRecords) {
+    console.error('\nThe FIFO report was not written as no sell records were found.\n')
+    Deno.exit(1)
+  }
+
   return sellRecords
 }
 
 export const usage: Usage = {
   option: `report --type ${FIFO_REPORT_TYPE}`,
   arguments: [
-    '--currency <taxable-currency>',
-    '--year <year>',
-    '--output <output-csv-file>',
-    '[--symbol <symbol>]',
+    '--currency <taxable-currency> : Some columns show values in this currency (converted from USD)',
+    '--symbol <symbol>             : The symbol to report on',
+    '--output <output-csv-file>    : Output CSV file path',
   ],
 }
 
 export const reportFifo = async () => {
   setUsage(usage)
   const currency = getArgValue('currency')
-  const _year = getArgValue('year')
   const outputFilePath = getArgValue('output')
   const symbol = getArgValue('symbol')
 
-  if (!currency || !_year || !outputFilePath) {
+  if (!currency || !symbol || !outputFilePath) {
     showUsageAndExit()
   }
 
-  const year = parseInt(_year)
   await restoreDatabases()
-  const db = getDataBase(year.toString())
+  const db = getDataBase(DB_FIFO)
 
-  const dbItems = db.getCollection(COLLECTION.TRANSACTION).getByAttribute(
-    symbol
-      ? [{
-        name: 'symbol',
-        value: symbol.toUpperCase(),
-      }]
-      : [],
-  )
+  const dbItems = db.getCollection(COLLECTION.TRANSACTION).getByAttribute([{
+    name: 'symbol',
+    value: symbol.toUpperCase(),
+  }])
 
   const transactions = dbItems.map((item) => Transaction.parse(item.object()))
   const cur = currency.toUpperCase()

@@ -66,10 +66,16 @@ export const addDocument = (
 
 export const persistDatabases = async () => {
   await createDbDir()
+  let persistCount = 0
 
   await Promise.all(
-    Object.entries(databases).map(([dbName, db]) => db.persist(getDatabaseFilePath(dbName))),
+    Object.entries(databases).map(([dbName, db]) => {
+      db.persist(getDatabaseFilePath(dbName))
+      persistCount++
+    }),
   )
+
+  return persistCount
 }
 
 export const restoreDatabase = async (year: string): Promise<Database> => {
@@ -113,7 +119,7 @@ export const reset = async () => {
   await Promise.all(fileNames.map((fileName) => {
     const filePath = `${getDatabasePath()}/${fileName}`
 
-    if (!filePath.endsWith(dbFileExtension)) {
+    if (filePath.endsWith(dbFileExtension)) {
       console.log(`Removing ${filePath} ...`)
       return Deno.remove(filePath)
     }

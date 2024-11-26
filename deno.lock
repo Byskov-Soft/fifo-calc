@@ -1,6 +1,7 @@
 {
   "version": "4",
   "specifiers": {
+    "jsr:@bysk/jsonfile-db@0.1.10": "0.1.10",
     "jsr:@bysk/jsonfile-db@0.1.9": "0.1.9",
     "jsr:@std/assert@0.224": "0.224.0",
     "jsr:@std/cli@*": "1.0.6",
@@ -19,6 +20,14 @@
   "jsr": {
     "@bysk/jsonfile-db@0.1.9": {
       "integrity": "139bc205de0d300a2de446e7f2cfe68e3b29e4960251c7942a7279ccf5a3ea9d",
+      "dependencies": [
+        "npm:date-fns",
+        "npm:uuid",
+        "npm:zod"
+      ]
+    },
+    "@bysk/jsonfile-db@0.1.10": {
+      "integrity": "ce0228c0a701684f94eb5f37457b6446cce1025e4037aa648fabb00ecc5693e2",
       "dependencies": [
         "npm:date-fns",
         "npm:uuid",

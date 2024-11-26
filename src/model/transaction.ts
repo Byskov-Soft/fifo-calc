@@ -10,6 +10,8 @@ export const inputColumns = [
   'usd_conversion_rate',
   'symbol_fee',
   'usd_fee',
+  'cleared',
+  'row_num',
 ]
 
 export enum TRANSACTION_TYPE {
@@ -31,6 +33,8 @@ export const InputTransaction = z.object({
   usd_conversion_rate: z.number(),
   symbol_fee: z.number(),
   usd_fee: z.number(),
+  cleared: z.boolean().default(false),
+  row_num: z.number().default(0),
 })
 
 export type InputTransaction = z.TypeOf<typeof InputTransaction>

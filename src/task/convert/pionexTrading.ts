@@ -1,56 +1,46 @@
 // Converts from Pionex trading.csv to fifo-calc's format
 import { parse } from '@std/csv/parse'
 import { parseISO } from 'date-fns'
-import { all, identity } from 'rambda'
 import { z } from 'zod'
 import { inputColumns, type InputTransaction, TRANSACTION_TYPE } from '../../model/transaction.ts'
 import { getUsdRate, loadRateTable } from '../../persistence/rateTable.ts'
 import { utcDateStringToISOString } from '../../util/date.ts'
 
-const pionexTrackerInputColumns = [
+const pionexTradingInputColumns = [
   'date',
-  'received_quantity',
-  'received_currency',
-  'sent_quantity',
-  'sent_currency',
-  'fee_amount',
-  'fee_currency',
-  'tag',
+  'amount',
+  'price',
+  'order_type',
+  'side',
+  'symbol',
+  'state',
+  'fee',
+  'strategy_type',
 ]
 
-const PionexTrackerInputRecord = z.object({
+const PionexTradingInputRecord = z.object({
   date: z.string().transform((v: string) => utcDateStringToISOString(v)),
-  received_quantity: z.string().transform((v: string) => parseFloat(v)),
-  received_currency: z.string(),
-  sent_quantity: z.string().transform((v: string) => parseFloat(v)),
-  sent_currency: z.string(),
-  fee_amount: z.string().transform((v: string) => parseFloat(v)),
-  fee_currency: z.string(),
-  tag: z.string(),
+  amount: z.string().transform((v: string) => parseFloat(v)),
+  price: z.string().transform((v: string) => parseFloat(v)),
+  side: z.enum(['BUY', 'SELL']),
+  symbol: z.string().transform((v: string) => v.split('_')[0]),
+  fee: z.string().transform((v: string) => parseFloat(v)),
 })
 
-type PionexInputRecord = z.TypeOf<typeof PionexTrackerInputRecord>
+type PionexInputRecord = z.TypeOf<typeof PionexTradingInputRecord>
 
 const parseCsvToInputRecord = async (
   csvFilePath: string,
   outputFilePath: string,
 ): Promise<PionexInputRecord[]> => {
   const dataTxt = await Deno.readTextFile(csvFilePath)
-  const dataJSON = parse(dataTxt, { columns: pionexTrackerInputColumns, skipFirstRow: true })
+  const dataJSON = parse(dataTxt, { columns: pionexTradingInputColumns, skipFirstRow: true })
   const invalids: Record<string, unknown>[] = []
 
   const parsed = dataJSON.map((row) => {
-    const record = PionexTrackerInputRecord.parse(row)
+    const record = PionexTradingInputRecord.parse(row)
 
-    const conditions = [
-      !isNaN(record.received_quantity),
-      !isNaN(record.sent_quantity),
-      !isNaN(record.fee_amount),
-      record.received_quantity > 0,
-      record.sent_quantity > 0,
-    ]
-
-    if (!all(identity, conditions)) {
+    if (record.price === 0 || record.amount === 0) {
       invalids.push(row)
       return null
     }
@@ -60,17 +50,16 @@ const parseCsvToInputRecord = async (
 
   if (invalids.length) {
     const filePath = `${outputFilePath}.invalid.csv`
-
     await Deno.writeTextFile(
       filePath,
       [
-        pionexTrackerInputColumns.join(','),
+        pionexTradingInputColumns.join(','),
         ...invalids.map((row) => Object.values(row).join(',')),
       ].join('\n'),
     )
 
     console.error(
-      `\nWrote ${invalids.length} zero quantity (received or sent) records to ${filePath}\n`,
+      `\nWrote ${invalids.length} zero price/amount records to ${filePath}\n`,
       '\nNote:\n',
       'These records may not be strictly invalid as they could\n',
       'be deposits, withdrawals or internal Pionex transfers.\n',
@@ -90,27 +79,40 @@ const convertToInputRecord = async (
     Array.from(years).map((year) => loadRateTable(currency, year)),
   )
 
+  /** Pionex data:
+   *  - amount = the cost of the trade
+   *  - price = the price of the asset
+   *
+   *  In fifo-calc we interpret amount to be the number of assets bought/sold
+   *  We can calculate the amount of assets bought/sold by dividing the amount by the price
+   */
+
   return inputRecords.map((record) => {
-    const type = record.received_currency !== 'USDT' ? TRANSACTION_TYPE.B : TRANSACTION_TYPE.S
-    const symbol = type === TRANSACTION_TYPE.B ? record.received_currency : record.sent_currency
-    const item_count = type === TRANSACTION_TYPE.B ? record.received_quantity : record.sent_quantity
-    const usd_cost = type === TRANSACTION_TYPE.B ? record.sent_quantity : record.received_quantity
+    const date = record.date
+    const type = record.side === 'BUY' ? TRANSACTION_TYPE.B : TRANSACTION_TYPE.S
+    const symbol = record.symbol
+    const usd_cost = record.amount // Read comment above
+    const item_count = record.amount / record.price
     const usd_conversion_rate = getUsdRate(currency, record.date)
+    const symbol_fee = type === TRANSACTION_TYPE.B ? record.fee : 0
+    const usd_fee = type === TRANSACTION_TYPE.S ? record.fee : 0
 
     return {
-      date: record.date,
+      date,
       type,
       symbol,
       usd_cost,
       item_count,
       usd_conversion_rate,
-      symbol_fee: 0,
-      usd_fee: record.fee_amount,
+      symbol_fee,
+      usd_fee,
+      cleared: false,
+      row_num: 0,
     }
   })
 }
 
-export const convertPionexTrackerCsv = async (
+export const convertPionexTradingCsv = async (
   currency: string,
   inputFilePath: string,
   outputFilePath: string,

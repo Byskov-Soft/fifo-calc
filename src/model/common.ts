@@ -35,9 +35,11 @@ export const ISO8601DateString = z.string().refine(
 export type ISO8601DateString = z.TypeOf<typeof ISO8601DateString>
 
 // Database
+
+export const DB_FIFO = 'fifo'
+
 export enum COLLECTION {
   TRANSACTION = 'transaction',
-  FIFO_IN_CURRENCY = 'fifo_in_currency',
 }
 
 export const dbFileExtension = '.db.json'
