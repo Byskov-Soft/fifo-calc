@@ -21,7 +21,7 @@ With the FIFO method you would do multiple calculations to get the difference be
 and buyng prices in the order the apples were bought.
 
 ```
-We sell all of 10 apples we bought first
+We sell all of the 10 apples we bought first
 10*$3 - 10*$2 = $30 - $20 = $10 profit
 
 Then  we sell 5 of the 10 apples that  were bought later
