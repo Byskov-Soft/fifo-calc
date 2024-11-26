@@ -51,7 +51,7 @@ After opening the file with Sheets, Excel, etc. It should look something like th
 Note that dates presented as `year-month-day hour:minute:second`. This make it possible to
 alphabetically sort the rows by date and still main proper order.
 
-## Transactions in USD, taxations in another currency
+## Transactions in USD, taxation in another currency
 
 Foremost this tool is made for the case where trading is done using USD, but taxation needs to be in
 another currency. This also means, that one of the requirements is that the USD rates for the
