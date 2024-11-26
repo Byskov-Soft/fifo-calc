@@ -1,20 +1,21 @@
 import { Database } from '@bysk/jsonfile-db'
-import { type DatabaseMap, dbFileExtension } from '../model/common.ts'
+import type { DatabaseMap } from '../model/common.ts'
+import { createDirectory } from '../util/file.ts'
 
+export const dbFileExtension = '.db.json'
+const dbDir = `${Deno.env.get('HOME')}/FIFOCalc/.data`
 const databases: DatabaseMap = {}
 
-export const getDatabasePath = () => {
-  return `${Deno.env.get('HOME')}/.fifo-calc/data`
-}
+export const getDatabasePath = () => dbDir
 
 export const getDatabaseFilePath = (dbName: string) => {
-  return `${getDatabasePath()}/${dbName}${dbFileExtension}`
+  return `${dbDir}/${dbName}${dbFileExtension}`
 }
 
 export const getDatabaseFileNames = async () => {
   const files: string[] = []
 
-  for await (const f of Deno.readDir(getDatabasePath())) {
+  for await (const f of Deno.readDir(dbDir)) {
     if (f.isFile && f.name.endsWith(dbFileExtension)) {
       files.push(f.name)
     }
@@ -24,21 +25,11 @@ export const getDatabaseFileNames = async () => {
 }
 
 export const createDbDir = async () => {
-  const dbDir = getDatabasePath()
-
-  try {
-    const dirInfo = await Deno.stat(dbDir)
-
-    if (!dirInfo.isDirectory) {
-      throw new Error(`Path "${dbDir}" is not a directory`)
-    }
-  } catch (error) {
-    if (error instanceof Deno.errors.NotFound) {
-      await Deno.mkdir(dbDir, { recursive: true })
-    } else {
-      throw error
-    }
-  }
+  return await createDirectory({
+    dirPath: dbDir,
+    creationMessage: `Created fifo-calc database directory at`,
+    printDirPath: true,
+  })
 }
 
 export const getDataBase = (dbName: string) => {
@@ -78,8 +69,10 @@ export const persistDatabases = async () => {
   return persistCount
 }
 
-export const restoreDatabase = async (year: string): Promise<Database> => {
-  const path = getDatabaseFilePath(year)
+export const restoreDatabase = async (name: string): Promise<Database> => {
+  console.log(`Restoring database ${name}...`)
+
+  const path = getDatabaseFilePath(name)
 
   try {
     const fileInfo = await Deno.stat(path)
@@ -90,7 +83,7 @@ export const restoreDatabase = async (year: string): Promise<Database> => {
   } catch (error) {
     if (error instanceof Deno.errors.NotFound) {
       throw new Error(
-        `Database for ${year} not found. Make sure to import USD transactions first.`,
+        `Database for ${name} not found. Make sure to import USD transactions first.`,
       )
     } else {
       throw error
@@ -99,7 +92,7 @@ export const restoreDatabase = async (year: string): Promise<Database> => {
 
   const db = new Database()
   await db.restore(path)
-  databases[year] = db
+  databases[name] = db
   return db
 }
 
@@ -107,8 +100,8 @@ export const restoreDatabases = async () => {
   const fileNames = await getDatabaseFileNames()
 
   await Promise.all(fileNames.map((fileName) => {
-    const year = fileName.split('.')[0]
-    return restoreDatabase(year)
+    const name = fileName.split('.')[0]
+    return restoreDatabase(name)
   }))
 }
 
@@ -117,7 +110,7 @@ export const reset = async () => {
   const fileNames = await getDatabaseFileNames()
 
   await Promise.all(fileNames.map((fileName) => {
-    const filePath = `${getDatabasePath()}/${fileName}`
+    const filePath = `${dbDir}/${fileName}`
 
     if (filePath.endsWith(dbFileExtension)) {
       console.log(`Removing ${filePath} ...`)

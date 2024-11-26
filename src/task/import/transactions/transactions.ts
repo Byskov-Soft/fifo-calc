@@ -73,8 +73,6 @@ export const createTransactions = async (
       cur_fee,
     }
 
-    console.log(newTrans)
-
     addDocument(DB_FIFO, COLLECTION.TRANSACTION, newTrans, generateUUID())
     return newTrans
   })

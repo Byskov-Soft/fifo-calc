@@ -52,7 +52,7 @@ export type Transaction = z.TypeOf<typeof Transaction>
 
 // TransactionProfit it the calculated profit of a transaction.
 // All numbers are in the taxable currency
-export const TransactionProfit = z.object({
+export const TransactionProfitFifo = z.object({
   date: z.string(),
   exchange: z.string(),
   symbol: z.string(),
@@ -66,4 +66,4 @@ export const TransactionProfit = z.object({
   cur_total_fee: z.number(),
 })
 
-export type TransactionProfit = z.TypeOf<typeof TransactionProfit>
+export type TransactionProfitFifo = z.TypeOf<typeof TransactionProfitFifo>

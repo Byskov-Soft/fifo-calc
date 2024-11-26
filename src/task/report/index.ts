@@ -1,6 +1,6 @@
 import { getArgValue, setUsage, showUsageAndExit } from '../../cmdOptions.ts'
 import type { Usage } from '../../model/common.ts'
-import { FIFO_REPORT_TYPE, reportFifo } from './fifo.ts'
+import { FIFO_REPORT_TYPE, reportFifo } from './fifo/index.ts'
 import { reportSymbols, SYMBOLS_REPORT_TYPE } from './symbols.ts'
 import { reportTransactions, TRANSACTIONS_REPORT_TYPE } from './transaction.ts'
 

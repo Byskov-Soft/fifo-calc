@@ -1,34 +1,73 @@
-# Exchange record examples
+# Fifo-calc
 
-## Bybit
+## About
 
-**Note:** All examples are from the Bybit unified account. If you are using the pre-unified account
-navigation may be different.
+Fico-calc is a commandline tool that can be used to generate FIFO reports from buy and sell
+transactions. It is primarily made with crypto transactions in mind but may be compatible with other
+scenarios.
 
-### Spot Trade History - Pre-unified account
+## What is a FIFO report and what is in it?
 
-Navigation:
-`Orders -> Unified Trading Order -> Unified Trading Account -> Spot (Pre-UTA) -> Order History`
+FIFO means first-in-first-out, and that principle is used when calculating profits and losses from
+your transactions. Lets illustrate this with an example.
 
-```
-Filled Time (Local Time),Spot Pairs,Order Type,Direction,Filled Value,Filled Price,Filled Quantity,Fees,Transaction ID,Order No.,Timestamp (UTC)
-2024-09-27 23:52:04,NEIRO/USDT,Market,Sell,99.687126000000000000 USDT,0.088900000000000000 USDT,1121.340000000000000000 NEIRO,0.199374252000000000 USDT,67006208,50228992,2024-09-27 21:52:04
-2024-09-27 23:02:35,NEIRO/USDT,Market,Buy,99.999510000000000000 USDT,0.089000000000000000 USDT,1123.590000000000000000 NEIRO,2.247180000000000000 NEIRO,98282240,89893632,2024-09-27 21:02:35
-```
+- You buy 10 apples for $2 each, total costs $20
+- You buy 10 apples for $4 each, total costs $40
+- You sell 15 apples for $3 each
 
-Example file name: `Bybit-Spot-TradeHistory-2024-06-30-2024-10-31.xls`
+What is you profit or loss?
 
-(export the XML file to CSV before using it with the fifo-calc converter)
-
-## Spot Trade History - Unified account
-
-Navigation:
-`Orders -> Unified Trading Order -> Unified Trading Account -> Spot Orders -> Order History`
+With the FIFO method you would do multiple calculations to get the difference between the selling
+and buyng prices in the order the apples were bought.
 
 ```
-Spot Pairs,Order Type,Direction,Filled Value,Filled Price,Filled Quantity,Fees,Transaction ID,Order No.,Timestamp (UTC)
-ICPUSDT,MARKET,SELL,49.97342400000000000000,9.32340000000000000000,5.36000000000000000000,0.04997342400000000000,2200000000355489633, 53982208,14:35 2024-11-16
-ICPUSDT,LIMIT,BUY,80.20300000000000000000,8.02030000000000000000,10.00000000000000000000,0.01000000000000000000,2200000000351556764, 87307520,03:18 2024-11-15
+We sell all of 10 apples we bought first
+10*$3 - 10*$2 = $30 - $20 = $10 profit
+
+Then  we sell 5 of the 10 apples that  were bought later
+5*$3 - 5*$4  = $15 - $20 = -$5 loss
+
+We still have 5 unsold apples.
 ```
 
-Example file name: `Bybit-Spot-OrderHistory-1731880800-1732571999.csv`
+The FIFO report is in CSV format (comma separated values). This can be importes to Google Sheets,
+Excel and other programs.
+
+Here is some sample output:
+
+```
+Date,Exchange,Symbol,Item Count,Sell cost (EUR),Original buy cost (EUR),Profit (EUR),Cost per item (EUR),Buying fee (EUR),Selling fee (EUR),Total fee (EUR)
+2024-11-08 07:47:00,Bybit,SUI,22.14,47.3281,42.1976,5.1304,2.1377,0.0473,0.0473,0.0946
+2024-11-09 06:55:00,Bybit,SUI,22.46,47.5805,42.8075,4.773,2.1185,0.0476,0.0476,0.0952
+```
+
+After opening the file with Sheets, Excel, etc. It should look something like this:
+
+| Date                | Exchange | Symbol | Item Count | Sell cost (EUR) | Original buy cost (EUR) | Profit (EUR) | Cost per item (EUR) | Buying fee (EUR) | Selling fee (EUR) | Total fee (EUR) |
+| ------------------- | -------- | ------ | ---------- | --------------- | ----------------------- | ------------ | ------------------- | ---------------- | ----------------- | --------------- |
+| 2024-11-08 07:47:00 | Bybit    | SUI    | 22.14      | 47.3281         | 42.1976                 | 5.1304       | 2.1377              | 0.0473           | 0.0473            | 0.0946          |
+| 2024-11-09 06:55:00 | Bybit    | SUI    | 22.46      | 47.5805         | 42.8075                 | 4.773        | 2.1185              | 0.0476           | 0.0476            | 0.0952          |
+
+Note that dates presented as `year-month-day hour:minute:second`. This make it possible to
+alphabetically sort the rows by date and still main proper order.
+
+## Transactions in USD, taxations in another currency
+
+Foremost this tool is made for the case where trading is done using USD, but taxation needs to be in
+another currency. This also means, that one of the requirements is that the USD rates for the
+secondary currency is provided.
+
+A USD only scenario is also supported, as the exchange rate is always 1. If you only operate with a
+single non-USD currency, this will in principle work, but some changes must be made to the headers
+of the FIFO reports. Some work to make this more flexible is planned for the future.
+
+## Fractional transactions
+
+As crypto is often bought in fractions, numbers are not rounded before it is really necessary (on
+the FIFO report). Up to four decimals are used. The number of bought and sold items are, however,
+never rounded as that cannot always be shown properly. Take Bitcoin (BTC) as the example. If you buy
+$10 of BTC you will own a fraction that could start with four or five zero decimals (0.0000).
+
+# Documentation
+
+In progress...

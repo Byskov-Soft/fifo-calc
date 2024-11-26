@@ -7,6 +7,9 @@ export interface Usage {
   arguments: string[]
 }
 
+export const fifoCalcDir = `${Deno.env.get('HOME')}/FIFOCalc`
+export const fifoCalcReportDir = `${Deno.env.get('HOME')}/FIFOCalc/Reports`
+
 // Dates
 export const Year = z.string().transform((v) => {
   const value = parseInt(v)
@@ -35,18 +38,14 @@ export const ISO8601DateString = z.string().refine(
 export type ISO8601DateString = z.TypeOf<typeof ISO8601DateString>
 
 // Database
-
 export const DB_FIFO = 'fifo'
 
 export enum COLLECTION {
   TRANSACTION = 'transaction',
 }
 
-export const dbFileExtension = '.db.json'
 export type DatabaseMap = { [name: string]: Database }
 
 // Conversion rates
-export const rateFileExtension = '.rate.json'
-
 export const RateRecord = z.record(ISO8601DateString, z.number())
 export type RateRecord = z.TypeOf<typeof RateRecord>

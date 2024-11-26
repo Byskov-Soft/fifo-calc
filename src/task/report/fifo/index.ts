@@ -1,16 +1,28 @@
-import { getArgValue, setUsage, showUsageAndExit } from '../../cmdOptions.ts'
-import { COLLECTION, DB_FIFO, type Usage } from '../../model/common.ts'
-import { Transaction, TRANSACTION_TYPE, type TransactionProfit } from '../../model/transaction.ts'
-import { getDataBase, restoreDatabases } from '../../persistence/database.ts'
-import { utcDateStringToISOString } from '../../util/date.ts'
+import { getArgValue, setUsage, showUsageAndExit } from '../../../cmdOptions.ts'
+import { COLLECTION, DB_FIFO, type Usage } from '../../../model/common.ts'
+import {
+  Transaction,
+  TRANSACTION_TYPE,
+  type TransactionProfitFifo,
+} from '../../../model/transaction.ts'
+import { getDataBase, restoreDatabases } from '../../../persistence/database.ts'
+import { createMultiFileReportDir } from '../../../util/file.ts'
+import type { TransactionMismatch } from './common.ts'
+import { reportprofitAndLossAsFifo } from './reportFifo.ts'
+import { reportMismatches } from './reportMismatch.ts'
 
 export const FIFO_REPORT_TYPE = 'fifo'
 
 function processSellTransactions(
   transactions: Transaction[],
-): TransactionProfit[] {
+): {
+  fifoRecords: TransactionProfitFifo[]
+  mismatches: TransactionMismatch[]
+  hasSellRecords: boolean
+} {
   const buyQueue: Array<{ item_count: number; cost_per_item: number; total_cost: number }> = []
-  const sellRecords: TransactionProfit[] = []
+  const sellRecords: TransactionProfitFifo[] = []
+  const mismatches: TransactionMismatch[] = []
   let hasSellRecords = false
 
   transactions.forEach((tx) => {
@@ -86,25 +98,17 @@ function processSellTransactions(
       }
 
       if (remainingcount > 0) {
-        console.error(
-          [
-            remainingcount.toFixed(2),
-            ` ${tx.symbol} were not matched with a buy transaction.\n`,
-            'Sell transaction:\n',
-            JSON.stringify(tx, null, 2),
-          ].join(''),
-          '\n',
-        )
+        const mismatch: TransactionMismatch = {
+          remaining: remainingcount,
+          transaction: tx,
+        }
+
+        mismatches.push(mismatch)
       }
     }
   })
 
-  if (!hasSellRecords) {
-    console.error('\nThe FIFO report was not written as no sell records were found.\n')
-    Deno.exit(1)
-  }
-
-  return sellRecords
+  return { fifoRecords: sellRecords, mismatches, hasSellRecords }
 }
 
 export const usage: Usage = {
@@ -112,20 +116,20 @@ export const usage: Usage = {
   arguments: [
     '--currency <taxable-currency> : Some columns show values in this currency (converted from USD)',
     '--symbol <symbol>             : The symbol to report on',
-    '--output <output-csv-file>    : Output CSV file path',
   ],
 }
 
 export const reportFifo = async () => {
+  // Resolve task arguments
   setUsage(usage)
   const currency = getArgValue('currency')
-  const outputFilePath = getArgValue('output')
   const symbol = getArgValue('symbol')
 
-  if (!currency || !symbol || !outputFilePath) {
+  if (!currency || !symbol) {
     showUsageAndExit()
   }
 
+  // Restore the database and get the transactions
   await restoreDatabases()
   const db = getDataBase(DB_FIFO)
 
@@ -135,39 +139,26 @@ export const reportFifo = async () => {
   }])
 
   const transactions = dbItems.map((item) => Transaction.parse(item.object()))
-  const cur = currency.toUpperCase()
-  const sellRecords = processSellTransactions(transactions)
 
-  const headers = [
-    'Date',
-    'Exchange',
-    'Symbol',
-    'Item Count',
-    `Sell cost (${cur})`,
-    `Original buy cost (${cur})`,
-    `Profit (${cur})`,
-    `Cost per item (${cur})`,
-    `Buying fee (${cur})`,
-    `Selling fee (${cur})`,
-    `Total fee (${cur})`,
-  ].join(',')
+  // Process the transactions
+  const { fifoRecords, mismatches, hasSellRecords } = processSellTransactions(transactions)
 
-  const records = sellRecords.map((c) =>
-    [
-      utcDateStringToISOString(c.date),
-      c.exchange,
-      c.symbol,
-      c.item_count,
-      c.sell_cost,
-      c.cur_original_buy_cost,
-      c.cur_profit,
-      c.cur_cost_per_item,
-      c.cur_buying_fee,
-      c.cur_selling_fee,
-      c.cur_total_fee,
-    ].join(',')
+  // Process the results
+  if (!hasSellRecords) {
+    console.log('\nFIFO report was not created as no sell records were found for the symbol\n')
+    Deno.exit(0)
+  }
+
+  // Report on sell mismatches
+  const { dir: outDir, prefix: dirPrefix } = await createMultiFileReportDir()
+  await reportMismatches(mismatches, outDir, symbol, dirPrefix)
+
+  // Finally, report the profit and loss
+  await reportprofitAndLossAsFifo(
+    fifoRecords,
+    outDir,
+    symbol,
+    currency.toUpperCase(),
+    dirPrefix,
   )
-
-  const outputData = [headers, ...records].join('\n')
-  await Deno.writeTextFile(outputFilePath, outputData)
 }

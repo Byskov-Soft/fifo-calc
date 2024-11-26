@@ -1,5 +1,7 @@
-import { rateFileExtension, RateRecord, type Year } from '../model/common.ts'
+import { RateRecord, type Year } from '../model/common.ts'
 import { getDatabasePath } from './database.ts'
+
+export const rateFileExtension = '.rate.json'
 
 interface RateTables {
   [currency: string]: {
@@ -29,7 +31,7 @@ export const loadRateTable = async (currency: string, year: Year) => {
   })
 
   if (!fileName) {
-    console.error(`Rate table file ${expectedFileName} was not found from ${getDatabasePath()}`)
+    console.error(`\nRate table file ${expectedFileName} was not found from ${getDatabasePath()}\n`)
     Deno.exit(1)
   }
 
