@@ -1,15 +1,15 @@
+import { getFifoReportFilePath } from '../../../config.ts'
 import type { TransactionProfitFifo } from '../../../model/index.ts'
 import { utcDateStringToISOString } from '../../../util/date.ts'
 
 export const reportprofitAndLossAsFifo = async (
   fifoRecords: TransactionProfitFifo[],
-  outDir: string,
   symbol: string,
   currrency: string,
-  prefix: string,
+  fileId: string,
 ) => {
   if (fifoRecords.length > 0) {
-    const fifoFile = `${outDir}/profit_and_loss_fifo_${symbol}.${prefix}.csv`
+    const fifoFile = getFifoReportFilePath(symbol, fileId)
 
     const headers = [
       'Date',
@@ -43,5 +43,13 @@ export const reportprofitAndLossAsFifo = async (
 
     const outputData = [headers, ...records].join('\n')
     await Deno.writeTextFile(fifoFile, outputData)
+    console.log(`${symbol} FIFO report was written to\n${fifoFile}\n`)
+
+    console.log([
+      'Note that buy and sell transactions included in the report are flagged',
+      'as processed and will not be included in future FIFO reports. If you',
+      'need to start over, you can reset the processed flag by running',
+      '"fifo-calc clear-processed"\n',
+    ].join('\n'))
   }
 }

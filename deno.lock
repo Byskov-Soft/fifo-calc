@@ -10,6 +10,7 @@
     "npm:@date-fns/utc@2.1.0": "2.1.0",
     "npm:date-fns-tz@3.2.0": "3.2.0_date-fns@3.0.6",
     "npm:date-fns@3.0.6": "3.0.6",
+    "npm:decimal.js@10.4.3": "10.4.3",
     "npm:fast-xml-parser@4.5.0": "4.5.0",
     "npm:papaparse@5.4.1": "5.4.1",
     "npm:rambda@9.3.0": "9.3.0",
@@ -62,6 +63,9 @@
     },
     "date-fns@3.0.6": {
       "integrity": "sha512-W+G99rycpKMMF2/YD064b2lE7jJGUe+EjOES7Q8BIGY8sbNdbgcs9XFTZwvzc9Jx1f3k7LB7gZaZa7f8Agzljg=="
+    },
+    "decimal.js@10.4.3": {
+      "integrity": "sha512-VBBaLc1MgL5XpzgIP7ny5Z6Nx3UrRkIViUkPUdtl9aya5amy3De1gsUUSB1g3+3sExYNjCAsAznmukyxCb1GRA=="
     },
     "fast-xml-parser@4.5.0": {
       "integrity": "sha512-/PlTQCI96+fZMAOLMZK4CWG1ItCbfZ/0jx7UIJFChPNrx7tcEgerUgWbeieCM9MfHInUDyK8DWYZ+YrywDJuTg==",

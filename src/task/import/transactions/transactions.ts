@@ -40,8 +40,6 @@ export const parseCsvToJson = async (
       usd_conversion_rate: z.string().transform((v: string) => parseFloat(v)),
       symbol_fee: z.string().transform((v: string) => v ? parseFloat(v) : 0),
       usd_fee: z.string().transform((v: string) => v ? parseFloat(v) : 0),
-      cleared: z.string().transform((v: string) => v === 'true'),
-      row_num: z.string().transform((v: string) => v ? parseInt(v) : 0),
     }).parse(row)
   }).filter((record) => {
     return yearLimit ? record.date.startsWith(yearLimit.toString()) : true
@@ -66,11 +64,16 @@ export const createTransactions = async (
 
     const newTrans: Transaction = {
       ...record,
+      _id: '', // will be replaced
       exchange,
       symbol: record.symbol.toUpperCase(),
       cur_cost,
       cur_price_per_item,
       cur_fee,
+      cleared: false,
+      row_num: 0,
+      remaining_item_count: record.type === TRANSACTION_TYPE.B ? record.item_count : -1,
+      remaining_cost: record.type === TRANSACTION_TYPE.B ? cur_cost : -1,
     }
 
     addDocument(DB_FIFO, COLLECTION.TRANSACTION, newTrans, generateUUID())

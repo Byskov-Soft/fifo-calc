@@ -1,5 +1,5 @@
 import { getArgValue, setUsage, showUsageAndExit } from '../../../cmdOptions.ts'
-import { type Usage } from '../../../model/common.ts'
+import type { Usage } from '../../../model/common.ts'
 import { createEcbEurUsdRates } from './ecb_eur_usd_xml_to_json.ts'
 
 export const RATES_IMPORT_TYPE = 'rates'

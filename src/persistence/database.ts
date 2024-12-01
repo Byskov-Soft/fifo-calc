@@ -1,35 +1,19 @@
 import { Database } from '@bysk/jsonfile-db'
+import { dbFileExtension, fifoCalcDbDir, getDatabaseFilePath } from '../config.ts'
 import type { DatabaseMap } from '../model/common.ts'
-import { createDirectory } from '../util/file.ts'
 
-export const dbFileExtension = '.db.json'
-const dbDir = `${Deno.env.get('HOME')}/FIFOCalc/.data`
 const databases: DatabaseMap = {}
-
-export const getDatabasePath = () => dbDir
-
-export const getDatabaseFilePath = (dbName: string) => {
-  return `${dbDir}/${dbName}${dbFileExtension}`
-}
 
 export const getDatabaseFileNames = async () => {
   const files: string[] = []
 
-  for await (const f of Deno.readDir(dbDir)) {
+  for await (const f of Deno.readDir(fifoCalcDbDir)) {
     if (f.isFile && f.name.endsWith(dbFileExtension)) {
       files.push(f.name)
     }
   }
 
   return files
-}
-
-export const createDbDir = async () => {
-  return await createDirectory({
-    dirPath: dbDir,
-    creationMessage: `Created fifo-calc database directory at`,
-    printDirPath: true,
-  })
 }
 
 export const getDataBase = (dbName: string) => {
@@ -44,7 +28,7 @@ export const addDocument = (
   dbName: string,
   collectionName: string,
   document: Record<string, unknown>,
-  id?: string,
+  id: string,
 ) => {
   if (!databases[dbName]) {
     databases[dbName] = new Database()
@@ -52,11 +36,10 @@ export const addDocument = (
 
   const db = databases[dbName]
   const collection = db.collection(collectionName)
-  collection.createDocument({ ...document, _id: id || undefined })
+  collection.createDocument({ ...document, _id: id })
 }
 
 export const persistDatabases = async () => {
-  await createDbDir()
   let persistCount = 0
 
   await Promise.all(
@@ -70,8 +53,6 @@ export const persistDatabases = async () => {
 }
 
 export const restoreDatabase = async (name: string): Promise<Database> => {
-  console.log(`Restoring database ${name}...`)
-
   const path = getDatabaseFilePath(name)
 
   try {
@@ -110,7 +91,7 @@ export const reset = async () => {
   const fileNames = await getDatabaseFileNames()
 
   await Promise.all(fileNames.map((fileName) => {
-    const filePath = `${dbDir}/${fileName}`
+    const filePath = `${fifoCalcDbDir}/${fileName}`
 
     if (filePath.endsWith(dbFileExtension)) {
       console.log(`Removing ${filePath} ...`)

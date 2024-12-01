@@ -74,8 +74,6 @@ const convertToInputRecord = async (
       usd_conversion_rate,
       symbol_fee,
       usd_fee,
-      cleared: false,
-      row_num: 0,
     }
   })
 }

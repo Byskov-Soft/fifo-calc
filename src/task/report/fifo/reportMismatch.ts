@@ -1,8 +1,9 @@
-import type { TransactionMismatch } from './common.ts'
+import { getFifoMismatchFilePath } from '../../../config.ts'
+import type { Transaction } from '../../../model/index.ts'
 
 const message = [
   '',
-  'The sell transactions below were partially or not at all matched with buy',
+  'Some sell transactions were only partially or not at all matched with buy',
   'transactions. To remedy the situation you need to import the missing transactions.',
   '',
   'Why did this happen?',
@@ -16,28 +17,33 @@ const message = [
   'This is, however, not an encouragement to create fake transactions. You should',
   'always strive to have a complete and accurate transaction history.',
   '',
+  'The following sell transactions are excluded from the report:',
+  '',
 ].join('\n')
 
 export const reportMismatches = (
-  mismatches: TransactionMismatch[],
-  outDir: string,
+  mismatches: Transaction[],
   symbol: string,
-  prefix: string,
+  fileId: string,
 ) => {
-  if (mismatches.length > 0) {
-    console.log(
-      `${mismatches.length} sell transactions were not fully matched with buy transactions`,
-    )
-
-    const mismatchFile = `${outDir}/mismatch_${symbol}.${prefix}.info`
-    console.log(`See details from ${mismatchFile}\n`)
-    const info: string[] = [message]
-
-    mismatches.forEach((m) => {
-      info.push(`${m.remaining} items were not matched with buy transactions`)
-      info.push(JSON.stringify(m.transaction, null, 2), '\n')
-    })
-
-    return Deno.writeTextFile(mismatchFile, info.join('\n'))
+  if (mismatches.length === 0) {
+    return
   }
+
+  // Output to console
+  console.log(
+    `\n${mismatches.length} sell transactions were not matched with buy transactions. See details from`,
+  )
+
+  const mismatchFile = getFifoMismatchFilePath(symbol, fileId)
+  console.log(`${mismatchFile}\n`)
+
+  // Output to mismatch file
+  const info: string[] = [message]
+
+  mismatches.forEach((transaction) => {
+    info.push(JSON.stringify(transaction, null, 2))
+  })
+
+  return Deno.writeTextFile(mismatchFile, info.join('\n') + '\n')
 }

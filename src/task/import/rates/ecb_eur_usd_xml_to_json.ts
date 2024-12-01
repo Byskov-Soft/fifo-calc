@@ -1,7 +1,7 @@
 import { addDays, isBefore } from 'date-fns'
 import { XMLParser } from 'fast-xml-parser'
+import { getRateFilePath } from '../../../config.ts'
 import type { Year } from '../../../model/common.ts'
-import { createDbDir, getDatabasePath } from '../../../persistence/database.ts'
 import {
   getDateRange,
   isBufferDateBeforeYearStart,
@@ -131,8 +131,7 @@ export const createEcbEurUsdRates = async (xmlFilePath: string, year: Year) => {
     const jsonData = JSON.stringify(rateTable, null, 2)
 
     // Write the JSON data to a file
-    const outputFilePath = `${getDatabasePath()}/eur-usd-${year}.rate.json`
-    await createDbDir()
+    const outputFilePath = getRateFilePath('eur', year)
     await Deno.writeTextFile(outputFilePath, jsonData)
     console.log(`\nEUR-USD rates written to ${outputFilePath}\n`)
   } catch (error) {

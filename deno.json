@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "license": "UNLICENSED",
   "nodeModulesDir": "none",
+  "tasks": {
+    "compile": "deno compile --allow-net --allow-read --allow-write --allow-env --allow-sys main.ts"
+  },
   "fmt": {
     "singleQuote": true,
     "indentWidth": 2,

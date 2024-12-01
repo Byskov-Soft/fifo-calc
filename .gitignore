@@ -1,2 +1,4 @@
 /misc
 .vscode
+/*.csv
+/fifo-calc

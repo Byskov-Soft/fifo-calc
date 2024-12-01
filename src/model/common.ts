@@ -7,9 +7,6 @@ export interface Usage {
   arguments: string[]
 }
 
-export const fifoCalcDir = `${Deno.env.get('HOME')}/FIFOCalc`
-export const fifoCalcReportDir = `${Deno.env.get('HOME')}/FIFOCalc/Reports`
-
 // Dates
 export const Year = z.string().transform((v) => {
   const value = parseInt(v)

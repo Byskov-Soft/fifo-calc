@@ -1,9 +1,8 @@
 import { format } from 'date-fns'
-import { fifoCalcReportDir } from '../model/common.ts'
 
-const ReportPrefixFormat = 'yyyy-MM-dd_HH-mm-ss'
+const ReportIdFormat = 'yyyy-MM-dd_HH-mm-ss'
 
-const getPrefix = () => format(new Date(), ReportPrefixFormat)
+export const getFileId = () => format(new Date(), ReportIdFormat)
 
 interface CreateDirectoryOptions {
   dirPath: string
@@ -34,19 +33,3 @@ export const createDirectory = async (opts: CreateDirectoryOptions) => {
     }
   }
 }
-
-export const createMultiFileReportDir = async (): Promise<{ dir: string; prefix: string }> => {
-  const prefix = getPrefix()
-  const dir = [fifoCalcReportDir, prefix].join('/')
-
-  await createDirectory({
-    dirPath: dir,
-    creationMessage: '\nCreated FIFO report directory',
-    printDirPath: true,
-  })
-
-  return { dir, prefix }
-}
-
-export const getReportFilename = (id: string, extension: string) =>
-  `${getPrefix()}_${id}.${extension}`

@@ -1,6 +1,8 @@
 import { parseAppOptions, setUsage, showUsageAndExit } from './src/cmdOptions.ts'
-import { fifoCalcDir, fifoCalcReportDir, type Usage } from './src/model/common.ts'
-import { createDbDir, reset } from './src/persistence/database.ts'
+import { fifoCalcDbDir, fifoCalcDir, fifoCalcReportDir } from './src/config.ts'
+import type { Usage } from './src/model/common.ts'
+import { reset } from './src/persistence/database.ts'
+import { clearProcessed } from './src/task/clearProcessed.ts'
 import { convertTasks } from './src/task/convert/index.ts'
 import { importData } from './src/task/import/index.ts'
 import { report } from './src/task/report/index.ts'
@@ -10,12 +12,13 @@ enum TASK {
   CONVERT = 'convert',
   IMPORT = 'import',
   REPORT = 'report',
+  CLEAR = 'clear-processed',
   RESET = 'reset',
   HELP = 'help',
 }
 
 const usage: Usage = {
-  option: '(convert | import | report | reset) <options>',
+  option: '(convert | import | report | clear-processed |reset) <options>',
   arguments: [],
 }
 
@@ -38,7 +41,11 @@ await createDirectory({
   printDirPath: true,
 })
 
-await createDbDir()
+await createDirectory({
+  dirPath: fifoCalcDbDir,
+  creationMessage: `Created fifo-calc database directory at`,
+  printDirPath: true,
+})
 
 setUsage(usage)
 
@@ -53,6 +60,10 @@ switch (Deno.args[0]) {
   }
   case TASK.REPORT: {
     await report()
+    break
+  }
+  case TASK.CLEAR: {
+    await clearProcessed()
     break
   }
   case TASK.RESET: {

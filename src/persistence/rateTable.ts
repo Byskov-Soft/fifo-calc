@@ -1,7 +1,5 @@
+import { fifoCalcDbDir, getRateFilePath, rateFileExtension } from '../config.ts'
 import { RateRecord, type Year } from '../model/common.ts'
-import { getDatabasePath } from './database.ts'
-
-export const rateFileExtension = '.rate.json'
 
 interface RateTables {
   [currency: string]: {
@@ -14,7 +12,7 @@ const rateTables: RateTables = {}
 export const getRateFileNames = async () => {
   const files: string[] = []
 
-  for await (const f of Deno.readDir(getDatabasePath())) {
+  for await (const f of Deno.readDir(fifoCalcDbDir)) {
     if (f.isFile && f.name.endsWith(rateFileExtension)) {
       files.push(f.name)
     }
@@ -24,18 +22,15 @@ export const getRateFileNames = async () => {
 }
 
 export const loadRateTable = async (currency: string, year: Year) => {
-  const expectedFileName = `${currency}-usd-${year}.rate.json`
+  const expectedFileName = getRateFilePath(currency, year)
+  const fileInfo = await Deno.stat(expectedFileName)
 
-  const fileName = (await getRateFileNames()).find((fileName) => {
-    return fileName === expectedFileName
-  })
-
-  if (!fileName) {
-    console.error(`\nRate table file ${expectedFileName} was not found from ${getDatabasePath()}\n`)
+  if (!fileInfo.isFile) {
+    console.error(`\nRate table file ${expectedFileName} was not found.\n`)
     Deno.exit(1)
   }
 
-  const data = await Deno.readTextFile(`${getDatabasePath()}/${fileName}`)
+  const data = await Deno.readTextFile(expectedFileName)
 
   if (!rateTables[currency]) {
     rateTables[currency] = {}

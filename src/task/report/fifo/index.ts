@@ -6,109 +6,65 @@ import {
   type TransactionProfitFifo,
 } from '../../../model/transaction.ts'
 import { getDataBase, restoreDatabases } from '../../../persistence/database.ts'
-import { createMultiFileReportDir } from '../../../util/file.ts'
-import type { TransactionMismatch } from './common.ts'
+import { getFileId } from '../../../util/file.ts'
+import { FifoQueue } from './FifoQueue.ts'
+import { createRecordsFromSale } from './createRecordsOfSale.ts'
+import { persistProcessed } from './persistProcessed.ts'
 import { reportprofitAndLossAsFifo } from './reportFifo.ts'
 import { reportMismatches } from './reportMismatch.ts'
-
 export const FIFO_REPORT_TYPE = 'fifo'
 
-function processSellTransactions(
-  transactions: Transaction[],
-): {
+interface FifoReportResult {
+  // Whether the report was successful or not
+  success: boolean
+  // Used for the CSV FIFO report
   fifoRecords: TransactionProfitFifo[]
-  mismatches: TransactionMismatch[]
-  hasSellRecords: boolean
-} {
-  const buyQueue: Array<{ item_count: number; cost_per_item: number; total_cost: number }> = []
-  const sellRecords: TransactionProfitFifo[] = []
-  const mismatches: TransactionMismatch[] = []
-  let hasSellRecords = false
+  // Used for the mismatch info report
+  mismatches: Transaction[]
+  // Buy transactions that were updated and need to be persisted
+}
 
-  transactions.forEach((tx) => {
+const processSellTransactions = async (
+  transactions: Transaction[],
+): Promise<FifoReportResult> => {
+  const sortedTransactions = transactions.sort((a, b) => a.row_num - b.row_num)
+  const fifoQueue = new FifoQueue()
+  const fifoRecords: TransactionProfitFifo[] = []
+  const mismatches: Transaction[] = []
+
+  sortedTransactions.forEach((tx) => {
     if (tx.type === TRANSACTION_TYPE.B) {
-      buyQueue.push({
-        item_count: tx.item_count,
-        cost_per_item: tx.cur_price_per_item,
-        total_cost: tx.cur_cost,
-      })
-    } else if (tx.type === TRANSACTION_TYPE.S) {
-      hasSellRecords = true
-      let remainingcount = tx.item_count
-      const feePerItem = tx.cur_fee / tx.item_count
-
-      while (remainingcount > 0 && buyQueue.length > 0) {
-        const currentBuy = buyQueue[0]
-
-        if (currentBuy.item_count <= remainingcount) {
-          const sellCost = currentBuy.item_count * tx.cur_price_per_item
-          const profitOrLoss = sellCost - currentBuy.total_cost
-
-          const buyingFee = parseFloat(
-            (currentBuy.item_count * (tx.cur_fee / tx.item_count)).toFixed(4),
-          )
-
-          const sellingFee = parseFloat((currentBuy.item_count * feePerItem).toFixed(4))
-
-          sellRecords.push({
-            date: tx.date,
-            exchange: tx.exchange,
-            symbol: tx.symbol,
-            item_count: currentBuy.item_count,
-            sell_cost: parseFloat(sellCost.toFixed(4)),
-            cur_cost_per_item: parseFloat(tx.cur_price_per_item.toFixed(4)),
-            cur_original_buy_cost: parseFloat(currentBuy.total_cost.toFixed(4)),
-            cur_profit: parseFloat(profitOrLoss.toFixed(4)),
-            cur_buying_fee: buyingFee,
-            cur_selling_fee: sellingFee,
-            cur_total_fee: parseFloat((buyingFee + sellingFee).toFixed(4)),
-          })
-
-          remainingcount -= currentBuy.item_count
-          buyQueue.shift()
-        } else {
-          const partialSellCost = remainingcount * tx.cur_price_per_item
-          const partialBuyCost = remainingcount * currentBuy.cost_per_item
-          const profitOrLoss = partialSellCost - partialBuyCost
-
-          const buyingFee = parseFloat(
-            (remainingcount * (tx.cur_fee / tx.item_count)).toFixed(4),
-          )
-
-          const sellingFee = parseFloat((remainingcount * feePerItem).toFixed(4))
-
-          sellRecords.push({
-            date: tx.date,
-            exchange: tx.exchange,
-            symbol: tx.symbol,
-            item_count: remainingcount,
-            sell_cost: parseFloat(partialSellCost.toFixed(4)),
-            cur_cost_per_item: parseFloat(tx.cur_price_per_item.toFixed(4)),
-            cur_original_buy_cost: parseFloat(partialBuyCost.toFixed(4)),
-            cur_profit: parseFloat(profitOrLoss.toFixed(4)),
-            cur_buying_fee: buyingFee,
-            cur_selling_fee: sellingFee,
-            cur_total_fee: parseFloat((buyingFee + sellingFee).toFixed(4)),
-          })
-
-          currentBuy.item_count -= remainingcount
-          currentBuy.total_cost -= partialBuyCost
-          remainingcount = 0
-        }
+      if (tx.remaining_item_count > 0) {
+        fifoQueue.addBuyTransaction(tx)
       }
+    } else if (tx.type === TRANSACTION_TYPE.S) {
+      const { success, fifoRecords: fifoList, mismatches: mismatchList } = createRecordsFromSale(
+        tx,
+        fifoQueue,
+      )
 
-      if (remainingcount > 0) {
-        const mismatch: TransactionMismatch = {
-          remaining: remainingcount,
-          transaction: tx,
-        }
-
-        mismatches.push(mismatch)
+      if (!success) {
+        mismatches.push(...mismatchList)
+      } else {
+        fifoRecords.push(...fifoList)
       }
     }
   })
 
-  return { fifoRecords: sellRecords, mismatches, hasSellRecords }
+  const buyUpdates = fifoQueue.getUpdatedBuyTransactions()
+  const sellUpdates = fifoQueue.getClearedSellTransactions()
+  await persistProcessed([...buyUpdates, ...sellUpdates])
+
+  if (buyUpdates.length === 0) {
+    console.log('\nFIFO report was not created as no sell records were found for the symbol\n')
+    return { success: false, fifoRecords, mismatches }
+  }
+
+  console.log(
+    `\nUpdated ${buyUpdates.length} buy record(s) and ${sellUpdates.length} sell record(s)`,
+  )
+
+  return { success: true, fifoRecords, mismatches }
 }
 
 export const usage: Usage = {
@@ -128,37 +84,36 @@ export const reportFifo = async () => {
   if (!currency || !symbol) {
     showUsageAndExit()
   }
-
   // Restore the database and get the transactions
   await restoreDatabases()
   const db = getDataBase(DB_FIFO)
 
-  const dbItems = db.getCollection(COLLECTION.TRANSACTION).getByAttribute([{
-    name: 'symbol',
-    value: symbol.toUpperCase(),
-  }])
+  const dbItems = db.getCollection(COLLECTION.TRANSACTION).getByAttribute([
+    { name: 'symbol', value: symbol.toUpperCase() },
+    { name: 'cleared', 'value': false },
+  ])
 
   const transactions = dbItems.map((item) => Transaction.parse(item.object()))
 
   // Process the transactions
-  const { fifoRecords, mismatches, hasSellRecords } = processSellTransactions(transactions)
+  const { fifoRecords, mismatches } = await processSellTransactions(
+    transactions,
+  )
 
-  // Process the results
-  if (!hasSellRecords) {
-    console.log('\nFIFO report was not created as no sell records were found for the symbol\n')
-    Deno.exit(0)
-  }
+  const fileId = getFileId()
 
   // Report on sell mismatches
-  const { dir: outDir, prefix: dirPrefix } = await createMultiFileReportDir()
-  await reportMismatches(mismatches, outDir, symbol, dirPrefix)
+  if (mismatches.length > 0) {
+    await reportMismatches(mismatches, symbol, fileId)
+  }
 
-  // Finally, report the profit and loss
-  await reportprofitAndLossAsFifo(
-    fifoRecords,
-    outDir,
-    symbol,
-    currency.toUpperCase(),
-    dirPrefix,
-  )
+  // Report the profit and loss
+  if (fifoRecords.length > 0) {
+    await reportprofitAndLossAsFifo(
+      fifoRecords,
+      symbol,
+      currency.toUpperCase(),
+      fileId,
+    )
+  }
 }

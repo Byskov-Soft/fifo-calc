@@ -21,13 +21,14 @@ export const hasOption = (option: string) => {
     throw new Error('parseAppArgs() must be called before getArg()')
   }
 
-  return args._.includes(option)
+  return args._.includes(option) || args._.includes(`--${option}`) ||
+    args[option] || args[`--${option}`]
 }
 
 export const setUsage = (usage: Usage) => {
   if (usage.arguments.length) {
     usageString = [
-      `Usage: fifo-calc ${usage.option} <options>`,
+      `Usage: fifo-calc ${usage.option} <options> [--debug]`,
       '',
       'Options:',
       ...usage.arguments.map((arg) => `  ${arg}\n`),
