@@ -1,4 +1,4 @@
-import { getArgValue, setUsage, showUsageAndExit } from '../../cmdOptions.ts'
+import { getOptValue, setUsage, showUsageAndExit } from '../../cmdOptions.ts'
 import { COLLECTION, DB_FIFO, type Usage } from '../../model/common.ts'
 import { Transaction } from '../../model/transaction.ts'
 import { getDataBase, restoreDatabases } from '../../persistence/database.ts'
@@ -15,8 +15,8 @@ export const usage: Usage = {
 
 export const reportSymbols = async () => {
   setUsage(usage)
-  const year = getArgValue('year')
-  const asJson = getArgValue('as-json')
+  const year = getOptValue('year')
+  const asJson = getOptValue('as-json')
 
   if (!year) {
     showUsageAndExit()

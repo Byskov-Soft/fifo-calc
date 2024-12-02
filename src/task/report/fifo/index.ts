@@ -1,4 +1,4 @@
-import { getArgValue, setUsage, showUsageAndExit } from '../../../cmdOptions.ts'
+import { getOptValue, setUsage, showUsageAndExit } from '../../../cmdOptions.ts'
 import { COLLECTION, DB_FIFO, type Usage } from '../../../model/common.ts'
 import {
   Transaction,
@@ -24,7 +24,7 @@ interface FifoReportResult {
   // Buy transactions that were updated and need to be persisted
 }
 
-const processSellTransactions = async (
+const processTransactions = async (
   transactions: Transaction[],
 ): Promise<FifoReportResult> => {
   const sortedTransactions = transactions.sort((a, b) => a.row_num - b.row_num)
@@ -78,8 +78,8 @@ export const usage: Usage = {
 export const reportFifo = async () => {
   // Resolve task arguments
   setUsage(usage)
-  const currency = getArgValue('currency')
-  const symbol = getArgValue('symbol')
+  const currency = getOptValue('currency')
+  const symbol = getOptValue('symbol')
 
   if (!currency || !symbol) {
     showUsageAndExit()
@@ -96,7 +96,7 @@ export const reportFifo = async () => {
   const transactions = dbItems.map((item) => Transaction.parse(item.object()))
 
   // Process the transactions
-  const { fifoRecords, mismatches } = await processSellTransactions(
+  const { fifoRecords, mismatches } = await processTransactions(
     transactions,
   )
 

@@ -3,10 +3,11 @@ import { parse } from '@std/csv/parse'
 import { parseISO } from 'date-fns'
 import { z } from 'zod'
 import { inputColumns, type InputTransaction, TRANSACTION_TYPE } from '../../model/transaction.ts'
-import { getUsdRate, loadRateTable } from '../../persistence/rateTable.ts'
+import { getUsdRate } from '../../persistence/rateTable.ts'
 import { utcDateStringToISOString } from '../../util/date.ts'
+import { loadRateTables, USD } from './common.ts'
 
-const pionexTradingInputColumns = [
+const bybitSpotPreUnifiedColumns = [
   'filled_local_time',
   'spot_pair',
   'order_type',
@@ -20,7 +21,7 @@ const pionexTradingInputColumns = [
   'timestamp_utc',
 ]
 
-const PionexTradingInputRecord = z.object({
+const BybitSpotPreUnifiedInputRecord = z.object({
   filled_local_time: z.string().transform((v: string) => utcDateStringToISOString(v)),
   spot_pair: z.string(),
   order_type: z.string(),
@@ -34,34 +35,35 @@ const PionexTradingInputRecord = z.object({
   timestamp_utc: z.string().transform((v: string) => utcDateStringToISOString(v)),
 })
 
-type PionexInputRecord = z.TypeOf<typeof PionexTradingInputRecord>
+type BybitSpotPreUnifiedInputRecord = z.TypeOf<typeof BybitSpotPreUnifiedInputRecord>
 
 const parseCsvToInputRecord = async (
   csvFilePath: string,
-): Promise<PionexInputRecord[]> => {
+): Promise<BybitSpotPreUnifiedInputRecord[]> => {
   const dataTxt = await Deno.readTextFile(csvFilePath)
-  const dataJSON = parse(dataTxt, { columns: pionexTradingInputColumns, skipFirstRow: true })
-  return dataJSON.map((row) => PionexTradingInputRecord.parse(row))
+  const dataJSON = parse(dataTxt, { columns: bybitSpotPreUnifiedColumns, skipFirstRow: true })
+  return dataJSON.map((row) => BybitSpotPreUnifiedInputRecord.parse(row))
 }
 
 const convertToInputRecord = async (
   currency: string,
-  inputRecords: PionexInputRecord[],
+  inputRecords: BybitSpotPreUnifiedInputRecord[],
 ): Promise<InputTransaction[]> => {
   const years = new Set(
     inputRecords.map((record) => parseISO(record.filled_local_time).getFullYear()),
   )
 
-  await Promise.all(
-    Array.from(years).map((year) => loadRateTable(currency, year)),
-  )
+  await loadRateTables(currency, Array.from(years))
+
   return inputRecords.map((record) => {
     const date = record.filled_local_time
     const type = record.direction === 'Buy' ? TRANSACTION_TYPE.B : TRANSACTION_TYPE.S
     const symbol = record.spot_pair.split('/')[0]
     const usd_cost = record.filled_value
     const item_count = record.filled_quantity
-    const usd_conversion_rate = getUsdRate(currency, record.filled_local_time)
+    const usd_conversion_rate = currency === USD
+      ? 1
+      : getUsdRate(currency, record.filled_local_time)
     const symbol_fee = type === TRANSACTION_TYPE.B ? record.fees : 0
     const usd_fee = type === TRANSACTION_TYPE.S ? record.fees : 0
 

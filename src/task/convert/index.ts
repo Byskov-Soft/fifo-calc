@@ -1,4 +1,4 @@
-import { getArgValue, setUsage, showUsageAndExit } from '../../cmdOptions.ts'
+import { getOptValue, setUsage, showUsageAndExit } from '../../cmdOptions.ts'
 import type { Usage } from '../../model/common.ts'
 import { convertBybitSpotPreUnifiedCsv } from './bybitSpotPreUnified.ts'
 import { convertBybitSpotUnifiedCsv } from './bybitSpotUnified.ts'
@@ -15,11 +15,16 @@ enum INPUT_TYPE {
 const crashMessage =
   'If the operation crashes, check that the input file matches the correct type (see --type option).\n'
 
+const currencyOption = [
+  '--currency <taxable-currency> : For looking up the USD exchange rate (requires that rates are imported).\n',
+  '                                  If currency is USD the rate lookup is skipped',
+].join('')
+
 export const usage: Usage = {
   option: 'convert',
   arguments: [
     `--type (\n      ${Object.values(INPUT_TYPE).join(' |\n      ')}\n    )`,
-    '--currency <taxable-currency> : For looking up the USD exchange rate',
+    currencyOption,
     '--input    <input-csv-file>   : A CSV file matching the specified type',
     '--output   <output-csv-file>  : fifo-calc compatible output file',
   ],
@@ -27,10 +32,10 @@ export const usage: Usage = {
 
 export const convertTasks = async () => {
   setUsage(usage)
-  const inputType = getArgValue('type')
-  const currency = getArgValue('currency')
-  const inputFilePath = getArgValue('input')
-  const outputFilePath = getArgValue('output')
+  const inputType = getOptValue('type') as string
+  const currency = getOptValue('currency') as string
+  const inputFilePath = getOptValue('input') as string
+  const outputFilePath = getOptValue('output') as string
 
   if (!currency || !inputType || !inputFilePath || !outputFilePath) {
     showUsageAndExit({
@@ -41,19 +46,19 @@ export const convertTasks = async () => {
 
   switch (inputType) {
     case INPUT_TYPE.PIONEX_TRADING: {
-      await convertPionexTradingCsv(currency, inputFilePath, outputFilePath)
+      await convertPionexTradingCsv(currency.toUpperCase(), inputFilePath, outputFilePath)
       break
     }
     case INPUT_TYPE.PIONEX_COIN_TRACKER: {
-      await convertPionexTrackerCsv(currency, inputFilePath, outputFilePath)
+      await convertPionexTrackerCsv(currency.toUpperCase(), inputFilePath, outputFilePath)
       break
     }
     case INPUT_TYPE.BYBIT_SPOT_PRE_UNIFIED: {
-      await convertBybitSpotPreUnifiedCsv(currency, inputFilePath, outputFilePath)
+      await convertBybitSpotPreUnifiedCsv(currency.toUpperCase(), inputFilePath, outputFilePath)
       break
     }
     case INPUT_TYPE.BYBIT_SPOT_UNIFIED: {
-      await convertBybitSpotUnifiedCsv(currency, inputFilePath, outputFilePath)
+      await convertBybitSpotUnifiedCsv(currency.toUpperCase(), inputFilePath, outputFilePath)
       break
     }
     default: {

@@ -1,4 +1,4 @@
-import { getArgValue, setUsage, showUsageAndExit } from '../../cmdOptions.ts'
+import { getOptValue, setUsage, showUsageAndExit } from '../../cmdOptions.ts'
 import type { Usage } from '../../model/common.ts'
 import { FIFO_REPORT_TYPE, reportFifo } from './fifo/index.ts'
 import { reportSymbols, SYMBOLS_REPORT_TYPE } from './symbols.ts'
@@ -13,7 +13,7 @@ export const usage: Usage = {
 
 export const report = async () => {
   setUsage(usage)
-  const reportType = getArgValue('type') || ''
+  const reportType = getOptValue('type') || ''
 
   switch (reportType) {
     case TRANSACTIONS_REPORT_TYPE: {

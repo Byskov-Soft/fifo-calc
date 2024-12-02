@@ -1,4 +1,4 @@
-import { getArgValue, setUsage, showUsageAndExit } from '../../../cmdOptions.ts'
+import { getOptValue, setUsage, showUsageAndExit } from '../../../cmdOptions.ts'
 import type { Usage } from '../../../model/common.ts'
 import { importExchangeTransactions } from './transactions.ts'
 
@@ -15,9 +15,9 @@ export const usage: Usage = {
 
 export const importTransactions = () => {
   setUsage(usage)
-  const exchange = getArgValue('exchange')
-  const yearLimit = getArgValue('year-limit')
-  const csvFilePath = getArgValue('input')
+  const exchange = getOptValue('exchange')
+  const csvFilePath = getOptValue('input')
+  const yearLimit = getOptValue('year-limit')
 
   if (!exchange || !csvFilePath) {
     showUsageAndExit()

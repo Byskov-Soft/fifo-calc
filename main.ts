@@ -1,4 +1,4 @@
-import { parseAppOptions, setUsage, showUsageAndExit } from './src/cmdOptions.ts'
+import { getArgAt, parseAppOptions, setUsage, showUsageAndExit } from './src/cmdOptions.ts'
 import { fifoCalcDbDir, fifoCalcDir, fifoCalcReportDir } from './src/config.ts'
 import type { Usage } from './src/model/common.ts'
 import { reset } from './src/persistence/database.ts'
@@ -18,7 +18,7 @@ enum TASK {
 }
 
 const usage: Usage = {
-  option: '(convert | import | report | clear-processed |reset) <options>',
+  option: '(convert | import | report | clear-processed | reset) <options>',
   arguments: [],
 }
 
@@ -49,7 +49,7 @@ await createDirectory({
 
 setUsage(usage)
 
-switch (Deno.args[0]) {
+switch (getArgAt(0)) {
   case TASK.CONVERT: {
     await convertTasks()
     break
@@ -71,6 +71,7 @@ switch (Deno.args[0]) {
     break
   }
   case TASK.HELP: {
+    showUsageAndExit({ exitWithError: false })
     break
   }
   default: {

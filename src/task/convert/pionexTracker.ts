@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { inputColumns, type InputTransaction, TRANSACTION_TYPE } from '../../model/transaction.ts'
 import { getUsdRate, loadRateTable } from '../../persistence/rateTable.ts'
 import { utcDateStringToISOString } from '../../util/date.ts'
+import { loadRateTables, USD } from './common.ts'
 
 const pionexTrackerInputColumns = [
   'date',
@@ -85,10 +86,13 @@ const convertToInputRecord = async (
   inputRecords: PionexInputRecord[],
 ): Promise<InputTransaction[]> => {
   const years = new Set(inputRecords.map((record) => parseISO(record.date).getFullYear()))
+  await loadRateTables(currency, Array.from(years))
 
-  await Promise.all(
-    Array.from(years).map((year) => loadRateTable(currency, year)),
-  )
+  if (currency !== USD) {
+    await Promise.all(
+      Array.from(years).map((year) => loadRateTable(currency, year)),
+    )
+  }
 
   return inputRecords.map((record) => {
     const date = record.date
@@ -96,7 +100,7 @@ const convertToInputRecord = async (
     const symbol = type === TRANSACTION_TYPE.B ? record.received_currency : record.sent_currency
     const item_count = type === TRANSACTION_TYPE.B ? record.received_quantity : record.sent_quantity
     const usd_cost = type === TRANSACTION_TYPE.B ? record.sent_quantity : record.received_quantity
-    const usd_conversion_rate = getUsdRate(currency, record.date)
+    const usd_conversion_rate = currency === USD ? 1 : getUsdRate(currency, record.date)
 
     return {
       date,

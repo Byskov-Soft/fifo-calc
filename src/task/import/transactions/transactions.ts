@@ -1,5 +1,4 @@
 import { parse } from '@std/csv/parse'
-import { parseISO } from 'date-fns'
 import { z } from 'zod'
 import { adjustRowNumbers } from '../../../misc/index.ts'
 import { COLLECTION, DB_FIFO, type Year } from '../../../model/common.ts'
@@ -14,7 +13,6 @@ import { addDocument, persistDatabases, restoreDatabases } from '../../../persis
 import { utcDateStringToISOString } from '../../../util/date.ts'
 import { generateUUID } from '../../../util/uuid.ts'
 
-type RecordsByYear = { [year: string]: InputTransaction[] }
 const headerLine = inputColumns.join(',')
 
 export const parseCsvToJson = async (
@@ -48,32 +46,28 @@ export const parseCsvToJson = async (
 
 export const createTransactions = async (
   exchange: string,
-  inputRecordsInYear: InputTransaction[],
+  inputTransactions: InputTransaction[],
 ) => {
-  const records = inputRecordsInYear.sort((a, b) =>
-    parseISO(a.date).getTime() - parseISO(b.date).getTime()
-  )
+  inputTransactions.forEach((tx) => {
+    const cur_cost = tx.usd_cost / tx.usd_conversion_rate
+    const cur_price_per_item = cur_cost / tx.item_count
 
-  records.forEach((record) => {
-    const cur_cost = record.usd_cost / record.usd_conversion_rate
-    const cur_price_per_item = cur_cost / record.item_count
-
-    const cur_fee = record.type === TRANSACTION_TYPE.B
-      ? cur_price_per_item * record.symbol_fee
-      : 1 / record.usd_conversion_rate * record.usd_fee
+    const cur_fee = tx.type === TRANSACTION_TYPE.B
+      ? cur_price_per_item * tx.symbol_fee
+      : 1 / tx.usd_conversion_rate * tx.usd_fee
 
     const newTrans: Transaction = {
-      ...record,
+      ...tx,
       _id: '', // will be replaced
       exchange,
-      symbol: record.symbol.toUpperCase(),
+      symbol: tx.symbol.toUpperCase(),
       cur_cost,
       cur_price_per_item,
       cur_fee,
       cleared: false,
       row_num: 0,
-      remaining_item_count: record.type === TRANSACTION_TYPE.B ? record.item_count : -1,
-      remaining_cost: record.type === TRANSACTION_TYPE.B ? cur_cost : -1,
+      remaining_item_count: tx.type === TRANSACTION_TYPE.B ? tx.item_count : -1,
+      remaining_cost: tx.type === TRANSACTION_TYPE.B ? cur_cost : -1,
     }
 
     addDocument(DB_FIFO, COLLECTION.TRANSACTION, newTrans, generateUUID())

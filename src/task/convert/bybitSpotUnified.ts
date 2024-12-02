@@ -3,10 +3,11 @@ import { parse } from '@std/csv/parse'
 import { parseISO } from 'date-fns'
 import { z } from 'zod'
 import { inputColumns, type InputTransaction, TRANSACTION_TYPE } from '../../model/transaction.ts'
-import { getUsdRate, loadRateTable } from '../../persistence/rateTable.ts'
+import { getUsdRate } from '../../persistence/rateTable.ts'
 import { utcDateStringToISOString } from '../../util/date.ts'
+import { loadRateTables } from './common.ts'
 
-const pionexTradingInputColumns = [
+const bybitSpotUnifiedInputColumns = [
   'spot_pair',
   'order_type',
   'direction',
@@ -19,7 +20,7 @@ const pionexTradingInputColumns = [
   'timestamp_utc',
 ]
 
-const PionexTradingInputRecord = z.object({
+const BybitSpotUnifiedInputRecord = z.object({
   spot_pair: z.string(),
   order_type: z.string(),
   direction: z.enum(['BUY', 'SELL']),
@@ -32,27 +33,22 @@ const PionexTradingInputRecord = z.object({
   timestamp_utc: z.string().transform((v: string) => utcDateStringToISOString(v)),
 })
 
-type PionexInputRecord = z.TypeOf<typeof PionexTradingInputRecord>
+type BybitSpotUnifiedInputRecord = z.TypeOf<typeof BybitSpotUnifiedInputRecord>
 
 const parseCsvToInputRecord = async (
   csvFilePath: string,
-): Promise<PionexInputRecord[]> => {
+): Promise<BybitSpotUnifiedInputRecord[]> => {
   const dataTxt = await Deno.readTextFile(csvFilePath)
-  const dataJSON = parse(dataTxt, { columns: pionexTradingInputColumns, skipFirstRow: true })
-  return dataJSON.map((row) => PionexTradingInputRecord.parse(row))
+  const dataJSON = parse(dataTxt, { columns: bybitSpotUnifiedInputColumns, skipFirstRow: true })
+  return dataJSON.map((row) => BybitSpotUnifiedInputRecord.parse(row))
 }
 
 const convertToInputRecord = async (
   currency: string,
-  inputRecords: PionexInputRecord[],
+  inputRecords: BybitSpotUnifiedInputRecord[],
 ): Promise<InputTransaction[]> => {
-  const years = new Set(
-    inputRecords.map((record) => parseISO(record.timestamp_utc).getFullYear()),
-  )
-
-  await Promise.all(
-    Array.from(years).map((year) => loadRateTable(currency, year)),
-  )
+  const years = new Set(inputRecords.map((record) => parseISO(record.timestamp_utc).getFullYear()))
+  await loadRateTables(currency, Array.from(years))
 
   return inputRecords.map((record) => {
     const date = record.timestamp_utc

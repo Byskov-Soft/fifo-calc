@@ -1,4 +1,4 @@
-import { getArgValue, setUsage, showUsageAndExit } from '../../cmdOptions.ts'
+import { getOptValue, setUsage, showUsageAndExit } from '../../cmdOptions.ts'
 import type { Usage } from '../../model/common.ts'
 import { importRates, RATES_IMPORT_TYPE } from './rates/index.ts'
 import { importTransactions, TRANSACTIONS_IMPORT_TYPE } from './transactions/index.ts'
@@ -12,7 +12,7 @@ export const usage: Usage = {
 
 export const importData = async () => {
   setUsage(usage)
-  const importType = getArgValue('type') || ''
+  const importType = getOptValue('type') || ''
 
   switch (importType) {
     case TRANSACTIONS_IMPORT_TYPE: {

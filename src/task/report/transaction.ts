@@ -1,4 +1,4 @@
-import { getArgValue, setUsage, showUsageAndExit } from '../../cmdOptions.ts'
+import { getOptValue, setUsage, showUsageAndExit } from '../../cmdOptions.ts'
 import { COLLECTION, DB_FIFO, type Usage } from '../../model/common.ts'
 import { Transaction } from '../../model/transaction.ts'
 import { getDataBase, restoreDatabases } from '../../persistence/database.ts'
@@ -17,10 +17,10 @@ export const usage: Usage = {
 
 export const reportTransactions = async () => {
   setUsage(usage)
-  const currency = getArgValue('currency')
-  const yearLimit = getArgValue('year-limit')
-  const outputFilePath = getArgValue('output')
-  const symbol = getArgValue('symbol')
+  const currency = getOptValue('currency')
+  const yearLimit = getOptValue('year-limit')
+  const outputFilePath = getOptValue('output')
+  const symbol = getOptValue('symbol')
 
   if (!currency || !outputFilePath) {
     showUsageAndExit()

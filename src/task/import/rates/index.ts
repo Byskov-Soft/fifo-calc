@@ -1,4 +1,4 @@
-import { getArgValue, setUsage, showUsageAndExit } from '../../../cmdOptions.ts'
+import { getOptValue, setUsage, showUsageAndExit } from '../../../cmdOptions.ts'
 import type { Usage } from '../../../model/common.ts'
 import { createEcbEurUsdRates } from './ecb_eur_usd_xml_to_json.ts'
 
@@ -32,9 +32,9 @@ export const usage: Usage = {
 
 export const importRates = async () => {
   setUsage(usage)
-  const source = getArgValue('source')
-  const year = getArgValue('year')
-  const xmlFilePath = getArgValue('input')
+  const source = getOptValue('source')
+  const year = getOptValue('year')
+  const xmlFilePath = getOptValue('input')
 
   switch (source) {
     case SOURCE_TYPE.ECB_EUR: {

@@ -3,26 +3,44 @@ import type { Usage } from './model/common.ts'
 
 let args: Args
 let usageString: string = 'ERROR: Usage not set'
+/*
+  Option example: --type
+  Option with value: --type=csv or --type csv
+
+  Arguments are standalon values like 'convert', 'import', 'report', etc.
+  that are not combined with options. Example where 'convert' is an argument:
+
+      convert --type=csv
+*/
+
+const checkArgs = () => {
+  if (!args) {
+    throw new Error('parseAppArgs() must be called before getArg()')
+  }
+}
 
 export const parseAppOptions = () => {
   args = parseArgs(Deno.args)
 }
 
-export const getArgValue = (option: string) => {
-  if (!args) {
-    throw new Error('parseAppArgs() must be called before getArg()')
-  }
-
+export const getOptValue = (option: string) => {
+  checkArgs()
   return args[option]
 }
 
 export const hasOption = (option: string) => {
-  if (!args) {
-    throw new Error('parseAppArgs() must be called before getArg()')
-  }
+  checkArgs()
+  return args[option] !== undefined
+}
 
-  return args._.includes(option) || args._.includes(`--${option}`) ||
-    args[option] || args[`--${option}`]
+export const getArgAt = (index: number) => {
+  checkArgs()
+  return args._[index]
+}
+
+export const hasArg = (arg: string) => {
+  checkArgs()
+  return args._.includes(arg)
 }
 
 export const setUsage = (usage: Usage) => {

@@ -3,8 +3,9 @@ import { parse } from '@std/csv/parse'
 import { parseISO } from 'date-fns'
 import { z } from 'zod'
 import { inputColumns, type InputTransaction, TRANSACTION_TYPE } from '../../model/transaction.ts'
-import { getUsdRate, loadRateTable } from '../../persistence/rateTable.ts'
+import { getUsdRate } from '../../persistence/rateTable.ts'
 import { utcDateStringToISOString } from '../../util/date.ts'
+import { loadRateTables, USD } from './common.ts'
 
 const pionexTradingInputColumns = [
   'date',
@@ -74,10 +75,7 @@ const convertToInputRecord = async (
   inputRecords: PionexInputRecord[],
 ): Promise<InputTransaction[]> => {
   const years = new Set(inputRecords.map((record) => parseISO(record.date).getFullYear()))
-
-  await Promise.all(
-    Array.from(years).map((year) => loadRateTable(currency, year)),
-  )
+  await loadRateTables(currency, Array.from(years))
 
   /** Pionex data:
    *  - amount = the cost of the trade
@@ -93,7 +91,7 @@ const convertToInputRecord = async (
     const symbol = record.symbol
     const usd_cost = record.amount // Read comment above
     const item_count = record.amount / record.price
-    const usd_conversion_rate = getUsdRate(currency, record.date)
+    const usd_conversion_rate = currency === USD ? 1 : getUsdRate(currency, record.date)
     const symbol_fee = type === TRANSACTION_TYPE.B ? record.fee : 0
     const usd_fee = type === TRANSACTION_TYPE.S ? record.fee : 0
 
