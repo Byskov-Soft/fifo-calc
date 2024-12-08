@@ -52,7 +52,7 @@ export function adjustRowNumbers(dbName: string): Promise<number> {
     row_num: index, // Assign a unique row_num starting from 0
   }))
 
-  const newCollection = new Collection(COLLECTION.TRANSACTION, db)
+  const newCollection = new Collection(COLLECTION.TRANSACTION)
 
   updatedRecords.forEach((record) => {
     newCollection.createDocument({ ...record, _id: generateUUID() })

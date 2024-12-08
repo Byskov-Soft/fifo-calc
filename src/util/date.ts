@@ -9,6 +9,19 @@ export const utcDateStringToISOString = (date: string): string => {
   return utcDateStringToISO(date).toISOString()
 }
 
+export const getUtcDateString = (date: Date): string => {
+  // Extract UTC components
+  const year = date.getUTCFullYear()
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(date.getUTCDate()).padStart(2, '0')
+  const hours = String(date.getUTCHours()).padStart(2, '0')
+  const minutes = String(date.getUTCMinutes()).padStart(2, '0')
+  const seconds = String(date.getUTCSeconds()).padStart(2, '0')
+
+  // YYYY-MM-DD HH:mm:ss
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+}
+
 /*
     Is a date within a buffer period of days before the start of the year?
 */

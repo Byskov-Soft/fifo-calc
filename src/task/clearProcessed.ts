@@ -7,7 +7,7 @@ export const clearProcessed = async () => {
   await restoreDatabases()
   const db = getDataBase(DB_FIFO)
   const collection = db.getCollection(COLLECTION.TRANSACTION)
-  const newCollection = new Collection(COLLECTION.TRANSACTION, db)
+  const newCollection = new Collection(COLLECTION.TRANSACTION)
   const existing = collection.getByAttribute([]).map((item) => Transaction.parse(item.object()))
 
   existing.forEach((record) => {

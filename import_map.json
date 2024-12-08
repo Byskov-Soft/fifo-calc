@@ -1,6 +1,6 @@
 {
   "imports": {
-    "@bysk/jsonfile-db": "jsr:@bysk/jsonfile-db@0.1.10",
+    "@bysk/jsonfile-db": "jsr:@bysk/jsonfile-db@0.1.14",
     "@std/csv/parse": "jsr:@std/csv/parse",
     "@std/cli/parse-args": "jsr:@std/cli/parse-args",
     "date-fns": "npm:date-fns@3.0.6",

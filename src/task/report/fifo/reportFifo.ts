@@ -1,6 +1,7 @@
+import { parseISO } from 'date-fns'
 import { getFifoReportFilePath } from '../../../config.ts'
 import type { TransactionProfitFifo } from '../../../model/index.ts'
-import { utcDateStringToISOString } from '../../../util/date.ts'
+import { getUtcDateString } from '../../../util/date.ts'
 
 export const reportprofitAndLossAsFifo = async (
   fifoRecords: TransactionProfitFifo[],
@@ -25,9 +26,12 @@ export const reportprofitAndLossAsFifo = async (
       `Total fee (${currrency})`,
     ].join(',')
 
-    const records = fifoRecords.map((c) =>
-      [
-        utcDateStringToISOString(c.date),
+    const records = fifoRecords.map((c) => {
+      const utcDate = parseISO(c.date)
+      const dateStr = getUtcDateString(utcDate)
+
+      return [
+        dateStr,
         c.exchange,
         c.symbol,
         c.item_count,
@@ -39,7 +43,7 @@ export const reportprofitAndLossAsFifo = async (
         c.cur_selling_fee,
         c.cur_total_fee,
       ].join(',')
-    )
+    })
 
     const outputData = [headers, ...records].join('\n')
     await Deno.writeTextFile(fifoFile, outputData)

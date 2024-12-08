@@ -1,7 +1,9 @@
+import { parseISO } from 'date-fns'
 import { getOptValue, setUsage, showUsageAndExit } from '../../cmdOptions.ts'
 import { COLLECTION, DB_FIFO, type Usage } from '../../model/common.ts'
 import { Transaction } from '../../model/transaction.ts'
 import { getDataBase, restoreDatabases } from '../../persistence/database.ts'
+import { getUtcDateString } from '../../util/date.ts'
 
 export const TRANSACTIONS_REPORT_TYPE = 'transactions'
 
@@ -61,9 +63,12 @@ export const reportTransactions = async () => {
     'Row Number',
   ].join(',')
 
-  const records = transactions.map((t) =>
-    [
-      t.date,
+  const records = transactions.map((t) => {
+    const utcDate = parseISO(t.date)
+    const dateStr = getUtcDateString(utcDate)
+
+    return [
+      dateStr,
       t.exchange,
       t.type,
       t.symbol,
@@ -78,7 +83,7 @@ export const reportTransactions = async () => {
       t.cleared,
       t.row_num,
     ].join(',')
-  )
+  })
 
   const outputData = [headers, ...records].join('\n')
   await Deno.writeTextFile(outputFilePath, outputData)

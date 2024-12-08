@@ -5,7 +5,7 @@ import { getDataBase, persistDatabases } from '../../../persistence/index.ts'
 export const persistProcessed = (processed: Transaction[]) => {
   const db = getDataBase(DB_FIFO)
   const collection = db.getCollection(COLLECTION.TRANSACTION)
-  const newCollection = new Collection(COLLECTION.TRANSACTION, db)
+  const newCollection = new Collection(COLLECTION.TRANSACTION)
 
   const processedById = processed.reduce((acc: { [id: string]: Transaction }, tx) => {
     acc[tx._id] = tx

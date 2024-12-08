@@ -22,7 +22,7 @@ export const getRateFileNames = async () => {
 }
 
 export const loadRateTable = async (currency: string, year: Year) => {
-  const expectedFileName = getRateFilePath(currency, year)
+  const expectedFileName = getRateFilePath(currency.toLocaleLowerCase(), year)
   const fileInfo = await Deno.stat(expectedFileName)
 
   if (!fileInfo.isFile) {
