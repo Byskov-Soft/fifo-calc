@@ -73,7 +73,7 @@ const convertToInputRecord = async (
   })
 }
 
-export const convertBybitSpotUnifiedCsv = async (
+export const convertBybitSpotUnified = async (
   currency: string,
   inputFilePath: string,
   outputFilePath: string,

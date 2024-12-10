@@ -10,7 +10,7 @@
 
 - Site location:
 
-  `Orders -> Unified Trading Order -> Unified Trading Account -> Spot Orders -> Order History`
+  `Orders -> Unified Trading Order -> Unified Trading Account -> Spot Orders -> Trade History`
 
 - Example data:
 
@@ -30,7 +30,7 @@
 
 - Site location:
 
-  `Orders -> Unified Trading Order -> Unified Trading Account -> Spot (Pre-UTA) -> Order History`
+  `Orders -> Unified Trading Order -> Unified Trading Account -> Spot (Pre-UTA) -> Trade History`
 
 - Example data
   ```

@@ -10,7 +10,7 @@ interface CreateDirectoryOptions {
   printDirPath?: boolean
 }
 
-export const createDirectory = async (opts: CreateDirectoryOptions) => {
+export const createDirectory = async (opts: CreateDirectoryOptions, recursive = true) => {
   try {
     const dirInfo = await Deno.stat(opts.dirPath)
 
@@ -19,7 +19,7 @@ export const createDirectory = async (opts: CreateDirectoryOptions) => {
     }
   } catch (error) {
     if (error instanceof Deno.errors.NotFound) {
-      await Deno.mkdir(opts.dirPath, { recursive: true })
+      await Deno.mkdir(opts.dirPath, { recursive })
 
       if (opts.creationMessage) {
         console.log(opts.creationMessage)

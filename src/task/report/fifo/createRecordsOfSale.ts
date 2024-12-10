@@ -68,12 +68,13 @@ export const createRecordsFromSale = (tx: Transaction, fifoQueue: FifoQueue): Fi
       const sellingFee = multiply(currentBuy.remaining_item_count, feePerItem)
 
       fifoRecords.push({
-        date: tx.date,
+        sell_date: tx.date,
+        buy_date: currentBuy.date,
         exchange: tx.exchange,
         symbol: tx.symbol,
         item_count: currentBuy.remaining_item_count,
         sell_cost: parseFloat(sellCost.toFixed(4)),
-        cur_cost_per_item: parseFloat(tx.cur_price_per_item.toFixed(4)),
+        cur_cost_per_item: parseFloat(tx.cur_price_per_item.toFixed(10)),
         cur_original_buy_cost: parseFloat(currentBuy.remaining_cost.toFixed(4)),
         cur_profit: parseFloat(profitOrLoss.toFixed(4)),
         cur_buying_fee: buyingFee,
@@ -103,15 +104,16 @@ export const createRecordsFromSale = (tx: Transaction, fifoQueue: FifoQueue): Fi
         (remainingCount * (tx.cur_fee / tx.item_count)).toFixed(4),
       )
 
-      const sellingFee = parseFloat((remainingCount * feePerItem).toFixed(4))
+      const sellingFee = parseFloat((remainingCount * feePerItem).toFixed(8))
 
       fifoRecords.push({
-        date: tx.date,
+        sell_date: tx.date,
+        buy_date: currentBuy.date,
         exchange: tx.exchange,
         symbol: tx.symbol,
         item_count: remainingCount,
         sell_cost: parseFloat(partialSellCost.toFixed(4)),
-        cur_cost_per_item: parseFloat(tx.cur_price_per_item.toFixed(4)),
+        cur_cost_per_item: parseFloat(tx.cur_price_per_item.toFixed(10)),
         cur_original_buy_cost: parseFloat(partialBuyCost.toFixed(4)),
         cur_profit: parseFloat(profitOrLoss.toFixed(4)),
         cur_buying_fee: buyingFee,

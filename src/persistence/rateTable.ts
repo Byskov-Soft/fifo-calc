@@ -1,4 +1,4 @@
-import { fifoCalcDbDir, getRateFilePath, rateFileExtension } from '../config.ts'
+import { fifoCalcDir, getRateFilePath, rateFileExtension } from '../config.ts'
 import { RateRecord, type Year } from '../model/common.ts'
 
 interface RateTables {
@@ -12,7 +12,7 @@ const rateTables: RateTables = {}
 export const getRateFileNames = async () => {
   const files: string[] = []
 
-  for await (const f of Deno.readDir(fifoCalcDbDir)) {
+  for await (const f of Deno.readDir(fifoCalcDir)) {
     if (f.isFile && f.name.endsWith(rateFileExtension)) {
       files.push(f.name)
     }
@@ -22,7 +22,8 @@ export const getRateFileNames = async () => {
 }
 
 export const loadRateTable = async (currency: string, year: Year) => {
-  const expectedFileName = getRateFilePath(currency.toLocaleLowerCase(), year)
+  const cur = currency.toLocaleLowerCase()
+  const expectedFileName = getRateFilePath(cur, year)
   const fileInfo = await Deno.stat(expectedFileName)
 
   if (!fileInfo.isFile) {
@@ -32,26 +33,27 @@ export const loadRateTable = async (currency: string, year: Year) => {
 
   const data = await Deno.readTextFile(expectedFileName)
 
-  if (!rateTables[currency]) {
-    rateTables[currency] = {}
+  if (!rateTables[cur]) {
+    rateTables[cur] = {}
   }
 
-  rateTables[currency][year] = RateRecord.parse(JSON.parse(data))
+  rateTables[cur][year] = RateRecord.parse(JSON.parse(data))
 }
 
 export const getUsdRate = (currency: string, transactionDate: string): number => {
+  const cur = currency.toLocaleLowerCase()
   const year = transactionDate.substring(0, 4)
   const date = transactionDate.substring(0, 10)
 
-  if (!rateTables[currency] || !rateTables[currency][year]) {
-    console.error(`Rate table for ${currency}-usd in year ${year} has not been loaded`)
+  if (!rateTables[cur] || !rateTables[cur][year.toString()]) {
+    console.error(`Rate table for ${cur}-usd in year ${year} has not been loaded`)
     Deno.exit(1)
   }
 
-  if (!rateTables[currency][year][date]) {
-    console.error(`Rate for ${currency}-usd in year ${year} on ${date} has not been loaded`)
+  if (!rateTables[cur][year][date]) {
+    console.error(`Rate for ${cur}-usd in year ${year} on ${date} has not been loaded`)
     Deno.exit(1)
   }
 
-  return rateTables[currency][year][date]
+  return rateTables[cur][year][date]
 }

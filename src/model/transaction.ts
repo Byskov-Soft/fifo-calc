@@ -12,6 +12,25 @@ export const inputColumns = [
   'usd_fee',
 ]
 
+export const transactionColumns = [
+  'date',
+  'exchange',
+  'type',
+  'symbol',
+  'usd_cost',
+  'item_count',
+  'usd_conversion_rate',
+  'symbol_fee',
+  'usd_fee',
+  'cur_cost',
+  'cur_price_per_item',
+  'cur_fee',
+  'cleared',
+  'row_num',
+  'remaining_item_count',
+  'remaining_cost',
+]
+
 export enum TRANSACTION_TYPE {
   B = 'B',
   S = 'S',
@@ -79,7 +98,8 @@ export type Transaction = z.TypeOf<typeof Transaction>
 // TransactionProfit it the calculated profit of a transaction.
 // All numbers are in the taxable currency
 export const TransactionProfitFifo = z.object({
-  date: z.string(),
+  sell_date: z.string(),
+  buy_date: z.string(),
   exchange: z.string(),
   symbol: z.string(),
   item_count: z.number(),

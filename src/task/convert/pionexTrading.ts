@@ -108,7 +108,7 @@ const convertToInputRecord = async (
   })
 }
 
-export const convertPionexTradingCsv = async (
+export const convertPionexTrading = async (
   currency: string,
   inputFilePath: string,
   outputFilePath: string,

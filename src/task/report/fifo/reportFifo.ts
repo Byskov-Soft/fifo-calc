@@ -8,30 +8,35 @@ export const reportprofitAndLossAsFifo = async (
   symbol: string,
   currrency: string,
   fileId: string,
+  outputDir: string,
 ) => {
   if (fifoRecords.length > 0) {
-    const fifoFile = getFifoReportFilePath(symbol, fileId)
+    const fifoFile = getFifoReportFilePath(outputDir, symbol, fileId)
 
     const headers = [
-      'Date',
+      'Sell date',
+      'Buy date',
       'Exchange',
       'Symbol',
-      'Item Count',
+      'Item count',
       `Sell cost (${currrency})`,
-      `Original buy cost (${currrency})`,
+      `Buy cost (${currrency})`,
       `Profit (${currrency})`,
-      `Cost per item (${currrency})`,
-      `Buying fee (${currrency})`,
-      `Selling fee (${currrency})`,
+      `Sell cost per item (${currrency})`,
+      `Buy fee (${currrency})`,
+      `Sell fee (${currrency})`,
       `Total fee (${currrency})`,
     ].join(',')
 
     const records = fifoRecords.map((c) => {
-      const utcDate = parseISO(c.date)
-      const dateStr = getUtcDateString(utcDate)
+      const utcSellDate = parseISO(c.sell_date)
+      const sellDateStr = getUtcDateString(utcSellDate)
+      const utcBuyDate = parseISO(c.buy_date)
+      const buyDateStr = getUtcDateString(utcBuyDate)
 
       return [
-        dateStr,
+        sellDateStr,
+        buyDateStr,
         c.exchange,
         c.symbol,
         c.item_count,

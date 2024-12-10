@@ -6,7 +6,7 @@ import {
   type TransactionProfitFifo,
 } from '../../../model/transaction.ts'
 import { getDataBase, restoreDatabases } from '../../../persistence/database.ts'
-import { getFileId } from '../../../util/file.ts'
+import { createDirectory, getFileId } from '../../../util/file.ts'
 import { FifoQueue } from './FifoQueue.ts'
 import { createRecordsFromSale } from './createRecordsOfSale.ts'
 import { persistProcessed } from './persistProcessed.ts'
@@ -72,6 +72,7 @@ export const usage: Usage = {
   arguments: [
     '--currency <taxable-currency> : Some columns show values in this currency (converted from USD)',
     '--symbol <symbol>             : The symbol to report on',
+    '[--output-dir <output-dir>]   : Output directory - defaults to the ./report',
   ],
 }
 
@@ -80,10 +81,17 @@ export const reportFifo = async () => {
   setUsage(usage)
   const currency = getOptValue('currency')
   const symbol = getOptValue('symbol')
+  let outputDir = getOptValue('output-dir')
 
   if (!currency || !symbol) {
     showUsageAndExit()
   }
+
+  if (!outputDir) {
+    outputDir = `${Deno.cwd()}/report`
+    await createDirectory({ dirPath: outputDir })
+  }
+
   // Restore the database and get the transactions
   await restoreDatabases()
   const db = getDataBase(DB_FIFO)
@@ -104,16 +112,17 @@ export const reportFifo = async () => {
 
   // Report on sell mismatches
   if (mismatches.length > 0) {
-    await reportMismatches(mismatches, symbol, fileId)
+    await reportMismatches(mismatches, symbol, fileId, outputDir)
   }
 
   // Report the profit and loss
   if (fifoRecords.length > 0) {
     await reportprofitAndLossAsFifo(
       fifoRecords,
-      symbol,
+      symbol.toUpperCase(),
       currency.toUpperCase(),
       fileId,
+      outputDir,
     )
   }
 }

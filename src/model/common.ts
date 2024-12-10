@@ -8,8 +8,8 @@ export interface Usage {
 }
 
 // Dates
-export const Year = z.string().transform((v) => {
-  const value = parseInt(v)
+export const Year = z.any().transform((v) => {
+  const value = typeof v === 'number' ? v : parseInt(v)
 
   if (value < 2000 || value > 2100) {
     throw new Error('Invalid year')

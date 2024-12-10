@@ -1,5 +1,5 @@
 import { Database } from '@bysk/jsonfile-db'
-import { dbFileExtension, fifoCalcDbDir, getDatabaseFilePath } from '../config.ts'
+import { dbFileExtension, fifoCalcDir, getDatabaseFilePath } from '../config.ts'
 import type { DatabaseMap } from '../model/common.ts'
 
 const databases: DatabaseMap = {}
@@ -7,7 +7,7 @@ const databases: DatabaseMap = {}
 export const getDatabaseFileNames = async () => {
   const files: string[] = []
 
-  for await (const f of Deno.readDir(fifoCalcDbDir)) {
+  for await (const f of Deno.readDir(fifoCalcDir)) {
     if (f.isFile && f.name.endsWith(dbFileExtension)) {
       files.push(f.name)
     }
@@ -44,15 +44,18 @@ export const persistDatabases = async () => {
 
   await Promise.all(
     Object.entries(databases).map(([dbName, db]) => {
-      db.persist(getDatabaseFilePath(dbName))
       persistCount++
+      return db.persist(getDatabaseFilePath(dbName))
     }),
   )
 
   return persistCount
 }
 
-export const restoreDatabase = async (name: string): Promise<Database> => {
+export const restoreDatabase = async (
+  name: string,
+  createIfNotExists = false,
+): Promise<Database> => {
   const path = getDatabaseFilePath(name)
 
   try {
@@ -63,6 +66,12 @@ export const restoreDatabase = async (name: string): Promise<Database> => {
     }
   } catch (error) {
     if (error instanceof Deno.errors.NotFound) {
+      if (createIfNotExists) {
+        const db = new Database()
+        databases[name] = db
+        return db
+      }
+
       throw new Error(
         `Database for ${name} not found. Make sure to import USD transactions first.`,
       )
@@ -91,7 +100,7 @@ export const reset = async () => {
   const fileNames = await getDatabaseFileNames()
 
   await Promise.all(fileNames.map((fileName) => {
-    const filePath = `${fifoCalcDbDir}/${fileName}`
+    const filePath = `${fifoCalcDir}/${fileName}`
 
     if (filePath.endsWith(dbFileExtension)) {
       console.log(`Removing ${filePath} ...`)

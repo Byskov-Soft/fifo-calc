@@ -1,4 +1,5 @@
 /misc
+/report
 .vscode
 /*.csv
 /fifo-calc

@@ -71,7 +71,6 @@ export const createTransactions = async (
     }
 
     addDocument(DB_FIFO, COLLECTION.TRANSACTION, newTrans, generateUUID())
-    return newTrans
   })
 
   const persistCount = await persistDatabases()

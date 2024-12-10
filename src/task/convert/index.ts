@@ -1,9 +1,9 @@
 import { getOptValue, setUsage, showUsageAndExit } from '../../cmdOptions.ts'
 import type { Usage } from '../../model/common.ts'
-import { convertBybitSpotPreUnifiedCsv } from './bybitSpotPreUnified.ts'
-import { convertBybitSpotUnifiedCsv } from './bybitSpotUnified.ts'
-import { convertPionexTrackerCsv } from './pionexTracker.ts'
-import { convertPionexTradingCsv } from './pionexTrading.ts'
+import { convertBybitSpotPreUnified } from './bybitSpotPreUnified.ts'
+import { convertBybitSpotUnified } from './bybitSpotUnified.ts'
+import { convertPionexTracker } from './pionexTracker.ts'
+import { convertPionexTrading } from './pionexTrading.ts'
 
 enum INPUT_TYPE {
   BYBIT_SPOT_PRE_UNIFIED = 'bybit-spot-pre-unified',
@@ -46,19 +46,19 @@ export const convertTasks = async () => {
 
   switch (inputType) {
     case INPUT_TYPE.PIONEX_TRADING: {
-      await convertPionexTradingCsv(currency.toUpperCase(), inputFilePath, outputFilePath)
+      await convertPionexTrading(currency.toUpperCase(), inputFilePath, outputFilePath)
       break
     }
     case INPUT_TYPE.PIONEX_COIN_TRACKER: {
-      await convertPionexTrackerCsv(currency.toUpperCase(), inputFilePath, outputFilePath)
+      await convertPionexTracker(currency.toUpperCase(), inputFilePath, outputFilePath)
       break
     }
     case INPUT_TYPE.BYBIT_SPOT_PRE_UNIFIED: {
-      await convertBybitSpotPreUnifiedCsv(currency.toUpperCase(), inputFilePath, outputFilePath)
+      await convertBybitSpotPreUnified(currency.toUpperCase(), inputFilePath, outputFilePath)
       break
     }
     case INPUT_TYPE.BYBIT_SPOT_UNIFIED: {
-      await convertBybitSpotUnifiedCsv(currency.toUpperCase(), inputFilePath, outputFilePath)
+      await convertBybitSpotUnified(currency.toUpperCase(), inputFilePath, outputFilePath)
       break
     }
     default: {

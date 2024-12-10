@@ -25,6 +25,7 @@ export const reportMismatches = (
   mismatches: Transaction[],
   symbol: string,
   fileId: string,
+  outputDir: string,
 ) => {
   if (mismatches.length === 0) {
     return
@@ -35,7 +36,7 @@ export const reportMismatches = (
     `\n${mismatches.length} sell transactions were not matched with buy transactions. See details from`,
   )
 
-  const mismatchFile = getFifoMismatchFilePath(symbol, fileId)
+  const mismatchFile = getFifoMismatchFilePath(outputDir, symbol, fileId)
   console.log(`${mismatchFile}\n`)
 
   // Output to mismatch file

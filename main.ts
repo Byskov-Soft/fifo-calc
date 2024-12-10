@@ -1,7 +1,8 @@
 import { getArgAt, parseAppOptions, setUsage, showUsageAndExit } from './src/cmdOptions.ts'
-import { fifoCalcDbDir, fifoCalcDir, fifoCalcReportDir } from './src/config.ts'
+import { fifoCalcDir } from './src/config.ts'
 import type { Usage } from './src/model/common.ts'
 import { reset } from './src/persistence/database.ts'
+import { backup } from './src/task/backup/index.ts'
 import { clearProcessed } from './src/task/clearProcessed.ts'
 import { convertTasks } from './src/task/convert/index.ts'
 import { importData } from './src/task/import/index.ts'
@@ -12,13 +13,14 @@ enum TASK {
   CONVERT = 'convert',
   IMPORT = 'import',
   REPORT = 'report',
+  BACKUP = 'backup',
   CLEAR = 'clear-processed',
   RESET = 'reset',
   HELP = 'help',
 }
 
 const usage: Usage = {
-  option: '(convert | import | report | clear-processed | reset) <options>',
+  option: '(convert | import | report | backup | clear-processed | reset) <options>',
   arguments: [],
 }
 
@@ -35,18 +37,6 @@ await createDirectory({
   printDirPath: true,
 })
 
-await createDirectory({
-  dirPath: fifoCalcReportDir,
-  creationMessage: 'Created fifo-calc report directory at',
-  printDirPath: true,
-})
-
-await createDirectory({
-  dirPath: fifoCalcDbDir,
-  creationMessage: `Created fifo-calc database directory at`,
-  printDirPath: true,
-})
-
 setUsage(usage)
 
 switch (getArgAt(0)) {
@@ -60,6 +50,10 @@ switch (getArgAt(0)) {
   }
   case TASK.REPORT: {
     await report()
+    break
+  }
+  case TASK.BACKUP: {
+    await backup()
     break
   }
   case TASK.CLEAR: {

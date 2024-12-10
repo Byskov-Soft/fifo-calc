@@ -33,7 +33,7 @@ import { generateUUID } from '../../util/uuid.ts'
   ]
  */
 
-export function adjustRowNumbers(dbName: string): Promise<number> {
+export const adjustRowNumbers = async (dbName: string): Promise<number> => {
   const db = getDataBase(dbName)
   const collection = db.getCollection(COLLECTION.TRANSACTION)
   const transactions = collection.getByAttribute([]).map((t) => Transaction.parse(t.object()))
@@ -46,18 +46,22 @@ export function adjustRowNumbers(dbName: string): Promise<number> {
     return new Date(a.date).getTime() - new Date(b.date).getTime()
   })
 
-  // Assign row_num based on the sorted order
-  const updatedRecords = sortedRecords.map((record, index) => ({
-    ...record,
-    row_num: index, // Assign a unique row_num starting from 0
-  }))
-
+  // Assign row_num (based on the sorted order)
+  // Insert the updated records into a new collection
   const newCollection = new Collection(COLLECTION.TRANSACTION)
 
-  updatedRecords.forEach((record) => {
-    newCollection.createDocument({ ...record, _id: generateUUID() })
+  sortedRecords.forEach((record, index) => {
+    const updatedRecord = {
+      ...record,
+      row_num: index, // Assign a unique row_num starting from 0
+      _id: generateUUID(),
+    }
+
+    newCollection.importObject(updatedRecord)
   })
 
-  db.addOrReplaceCollection(COLLECTION.TRANSACTION, newCollection)
-  return persistDatabases()
+  //console.log(JSON.stringify(newCollection.getByAttribute([]), null, 2))
+  db.removeCollection(COLLECTION.TRANSACTION)
+  db.addCollection(newCollection)
+  return await persistDatabases()
 }
