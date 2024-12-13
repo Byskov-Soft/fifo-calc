@@ -47,7 +47,7 @@ and buyng prices in the order the apples were bought and sold.
 
 - So we earned $5 of profit and still have 5 unsold apples.
 
-Another accounting principle is LIFO (last-in-last-out) which picks transactions in the reverse
+Another accounting principle is LIFO (last-in-first-out) which picks transactions in the reverse
 order. It is less used, although still accepted by many tax authorities.
 
 ## Transactions in USD and taxation in another currency
@@ -56,7 +56,7 @@ Foremost this tool is made for the case where trading is done using USD, but tax
 currency. This also means, that USD rates for the secondary currency must be provided.
 
 A USD only scenario is also supported. For that we simply set the exchange rate to 1. In principle,
-this will aslo work where transactions and taxation is in the same non-USD currency, although some
+this will also work where transactions and taxation is in the same non-USD currency, although some
 changes to the output headers must be made. It should, however be easy to fix in a text editor or a
 sheet app (e.g. Excel). Anyway, a better solution for this scenario is currently in the works.
 
@@ -75,7 +75,7 @@ If your transactions are available in the supported format, creating FIFO report
    - Transactions are saved to a JSON file DB located at `<HOME-DIR>/.fifo-calc/fifo.db.json`
 
 1. [Create FIFO reports](#creating-fifo-reports) per symbol (BTC, ETH, etc.)
-   - Reports are saved to a user defined or default output files
+   - Reports are saved to a user defined or default output directory
 
 **Please note**:
 
@@ -87,9 +87,26 @@ If your transactions are available in the supported format, creating FIFO report
 > in very slow performance or cause other issues.
 >
 > Instead of keeping the database intact, it is better to use the
-> [backup - save and restore](#transaction-backup---save-and-restore) commands.
+> [backup - save and restore](docs/BACKUPS.md) commands.
 
 ## Importing transactions
+
+### Import command
+
+```
+Usage: fifo-calc import --type transactions <options> [--debug]
+
+Options:
+  --exchange <exchange-name> : Name of the exchange transactions originate from
+
+  --input <input-csv-file>   : A CSV file matching the fifo-calc input format
+
+  [--year-limit <year>]      : Limit imports to a specific year
+```
+
+Example: `fifo-calc import --type transactions --exchange Binance --input ./binanceTransactions.csv`
+
+## About importing
 
 - Transactions should be available in CSV files
 
@@ -128,21 +145,6 @@ The following columns are mandatory (others will be ignored):
 | symbol_fee          | Eventual fee in the "symbol" currency or "0"                                                                                                                                        |
 | usd_fee             | Eventual fee in USD or "0"                                                                                                                                                          |
 
-### Import command
-
-```
-Usage: fifo-calc import --type transactions <options> [--debug]
-
-Options:
-  --exchange <exchange-name> : Name of the exchange transactions originate from
-
-  --input <input-csv-file>   : A CSV file matching the fifo-calc input format
-
-  [--year-limit <year>]      : Limit imports to a specific year
-```
-
-Example: `fifo-calc import --type transactions --exchange Binance --input ./binanceTransactions.csv`
-
 ### Fixing mistakes and re-importing
 
 Sometimes you have made mistakes or simply want to re-import updated files. As there is no overwrite
@@ -159,6 +161,23 @@ format.
   **Pionex** (see [Conversion of exchange CSV files](docs/CSV_CONVERSION.md)
 
 ## Creating FIFO reports
+
+### Report command
+
+```
+Usage: fifo-calc report --type fifo <options> [--debug]
+
+Options:
+  --currency <taxable-currency> : Some columns show values in this currency (converted from USD)
+
+  --symbol <symbol>             : The symbol to report on
+
+  [--output-dir <output-dir>]   : Output directory - defaults to the ./report
+```
+
+Example: `fifo-calc report --type fifo --currency EUR --symbol BTC --output-dir ./`
+
+### About FIFO reports
 
 A FIFO report is always covering transactions of a single symbol. This means you must run the report
 command for every single currency you have traded and want to report on.
@@ -193,21 +212,6 @@ The FIFO report command will...
 
 [^1]: A cleared transaction, is a transaction that has been accounted for. It is tagged so that it
     is not included in future reports.
-
-### Report command
-
-```
-Usage: fifo-calc report --type fifo <options> [--debug]
-
-Options:
-  --currency <taxable-currency> : Some columns show values in this currency (converted from USD)
-
-  --symbol <symbol>             : The symbol to report on
-
-  [--output-dir <output-dir>]   : Output directory - defaults to the ./report
-```
-
-Example: `fifo-calc report --type fifo --currency EUR --symbol BTC --output-dir ./`
 
 Sample output:
 
