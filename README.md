@@ -268,3 +268,13 @@ Description of the output columns:
 - [Database backups - Save and Restore](docs/BACKUPS.md)
 - [Conversion of exchange CSV files](docs/CSV_CONVERSION.md)
 - [Exchange rate import (for CSV conversion)](docs/RATE_IMPORT.md)
+
+# Planned features
+
+- Better help provided by `fifo --help`
+
+- Use `--year-limit` flag with the `report --type fifo` command, to skip sell transactions that are
+  not in the provided year (buy transactions will never be skipped)
+- Release converters (from Exchange CSV to Fifo-calc input format) as separate binaries
+  - This will make it easier to copy existing converters and modify them for your own purpose
+- Support for a single currency (if transaction and taxation currency is the same) that is not USD
