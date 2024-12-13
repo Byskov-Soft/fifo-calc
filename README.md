@@ -62,11 +62,11 @@ sheet app (e.g. Excel). Anyway, a better solution for this scenario is currently
 
 ## Fractional transactions
 
-As crypto is often bought in fractions (you partly buy items) , numbers are not rounded before it is
-really necessary. Up to 10 decimals are used (depending on the situation). The number of bought and
-sold items are, however, not rounded as that cannot always be shown properly. Take Bitcoin (BTC) as
-the example. If you buy $10 of BTC you will own a fraction that could have four or five zero
-decimals (e.g. `0.000015831`).
+As crypto is often bought in fractions (you buy a part of an item), numbers are not rounded before
+it is really necessary. Up to 10 decimals are used (depending on the situation). The number of
+bought and sold items are, however, not rounded as that cannot always be shown properly. Take
+Bitcoin (BTC) as the example. If you buy $10 of BTC you will own a fraction that could have four or
+five zero decimals (e.g. `0.000015831`).
 
 # Installation
 
