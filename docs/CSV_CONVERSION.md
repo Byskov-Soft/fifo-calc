@@ -1,4 +1,4 @@
-# Exchange Data Files
+# Conversion of exchange CSV files
 
 ## Bybit
 

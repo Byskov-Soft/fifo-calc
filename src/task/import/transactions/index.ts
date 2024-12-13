@@ -7,8 +7,8 @@ export const TRANSACTIONS_IMPORT_TYPE = 'transactions'
 export const usage: Usage = {
   option: `import --type ${TRANSACTIONS_IMPORT_TYPE}`,
   arguments: [
-    '--exchange <exchange-name> : Name of the exchange being imported from',
-    '--input <input-csv-file>   : A CSV file matching the fifo-calc format',
+    '--exchange <exchange-name> : Name of the exchange transactions originate from',
+    '--input <input-csv-file>   : A CSV file matching the fifo-calc input format',
     '[--year-limit <year>]      : Limit imports to a specific year',
   ],
 }
