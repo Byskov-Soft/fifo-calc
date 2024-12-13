@@ -3,7 +3,7 @@ import { COLLECTION, DB_FIFO } from '../model/common.ts'
 import { Transaction, TRANSACTION_TYPE } from '../model/transaction.ts'
 import { getDataBase, persistDatabases, restoreDatabases } from '../persistence/database.ts'
 
-export const clearProcessed = async () => {
+export const resetProcessed = async () => {
   await restoreDatabases()
   const db = getDataBase(DB_FIFO)
   const collection = db.getCollection(COLLECTION.TRANSACTION)

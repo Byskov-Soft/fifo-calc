@@ -62,10 +62,29 @@ sheet app (e.g. Excel). Anyway, a better solution for this scenario is currently
 
 ## Fractional transactions
 
-As crypto is often bought in fractions, numbers are not rounded before it is really necessary. Up to
-10 decimals are used (depending on the situation). The number of bought and sold items are, however,
-not rounded as that cannot always be shown properly. Take Bitcoin (BTC) as the example. If you buy
-$10 of BTC you will own a fraction that could have four or five zero decimals (e.g. `0.000015831`).
+As crypto is often bought in fractions (you partly buy items) , numbers are not rounded before it is
+really necessary. Up to 10 decimals are used (depending on the situation). The number of bought and
+sold items are, however, not rounded as that cannot always be shown properly. Take Bitcoin (BTC) as
+the example. If you buy $10 of BTC you will own a fraction that could have four or five zero
+decimals (e.g. `0.000015831`).
+
+# Installation
+
+- Install the [Deno runtime](https://deno.com/)
+  - If you are on Linux or Mac, using [DVM](https://deno.land/x/dvm@v1.9.1) (Deno version manager)
+    is recommended
+- Clone the [GitHub repository](https://github.com/Byskov-Soft/fifo-calc):
+
+  `git clone https://github.com/Byskov-Soft/fifo-calc.git`
+
+- Compile the binary:
+  ```
+  cd fifo calc
+  deno task compile
+  ```
+- Copy the compiled app to a directory in your path
+
+  E.g. `sudo cp ./fifo-calc /usr/local/bin/`
 
 # Usage
 
@@ -160,7 +179,7 @@ format.
 - Fifo-calc provide converters for some record types from a few exchanges such as **Bybit** and
   **Pionex** (see [Conversion of exchange CSV files](docs/CSV_CONVERSION.md)
 
-## Creating FIFO reports
+## Create FIFO reports
 
 ### Report command
 
@@ -210,6 +229,9 @@ The FIFO report command will...
   - As buy transaction will not be cleared before all bought items are matched with sold items. The
     database will keep track on how much there is still to sell.
 
+  - If you need to start over (e.g. if you forgot to import some transactions) You can reset the
+    cleared flags and number of items tracking by running: `fifo reset-processed'
+
 [^1]: A cleared transaction, is a transaction that has been accounted for. It is tagged so that it
     is not included in future reports.
 
@@ -237,3 +259,12 @@ Description of the output columns:
 | Buy fee (`<currency>`)            | The buy fee in the taxable currency                         |
 | Sell fee (`<currency>`)           | The sell fee in the taxable currency                        |
 | Total fee (`<currency>`)          | The total fee (buy fee + sell fee) in the taxable currency  |
+
+# More documumentation
+
+(All of these docs are currently empty... content is being written)
+
+- [Fifo command overview](docs/COMMANDS.md)
+- [Database backups - Save and Restore](docs/BACKUPS.md)
+- [Conversion of exchange CSV files](docs/CSV_CONVERSION.md)
+- [Exchange rate import (for CSV conversion)](docs/RATE_IMPORT.md)

@@ -3,10 +3,10 @@ import { fifoCalcDir } from './src/config.ts'
 import type { Usage } from './src/model/common.ts'
 import { reset } from './src/persistence/database.ts'
 import { backup } from './src/task/backup/index.ts'
-import { clearProcessed } from './src/task/clearProcessed.ts'
 import { convertTasks } from './src/task/convert/index.ts'
 import { importData } from './src/task/import/index.ts'
 import { report } from './src/task/report/index.ts'
+import { resetProcessed } from './src/task/resetProcessed.ts'
 import { createDirectory } from './src/util/file.ts'
 
 enum TASK {
@@ -14,13 +14,13 @@ enum TASK {
   IMPORT = 'import',
   REPORT = 'report',
   BACKUP = 'backup',
-  CLEAR = 'clear-processed',
+  RESET_PROCESSED = 'reset-processed',
   RESET = 'reset',
   HELP = 'help',
 }
 
 const usage: Usage = {
-  option: '(convert | import | report | backup | clear-processed | reset) <options>',
+  option: '(convert | import | report | backup | reset-processed | reset) <options>',
   arguments: [],
 }
 
@@ -56,8 +56,8 @@ switch (getArgAt(0)) {
     await backup()
     break
   }
-  case TASK.CLEAR: {
-    await clearProcessed()
+  case TASK.RESET_PROCESSED: {
+    await resetProcessed()
     break
   }
   case TASK.RESET: {
