@@ -20,7 +20,7 @@ Excel and other similar apps.
 This should get you a long way when doing your taxes, but whether or not this is enough to satisfy
 the tax authorieties in your specific country is something to figure out before relying on the tool.
 
-**DISCLAIMER: It should be noted that the author of this tool is not financial savy or or math
+**DISCLAIMER: It should be noted that the author of this tool is not financial savy or a math
 genius. It was made with personal use in mind and provided as-is. No responsibility for wrong
 calculations or other issues will be taken. Use the tool at your own risk. That said, feedback about
 bugs and features are welcome.**
