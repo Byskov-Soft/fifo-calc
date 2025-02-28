@@ -3,17 +3,17 @@ import { COLLECTION, DB_FIFO, type Usage, Year } from '../../model/common.ts'
 import { Transaction } from '../../model/transaction.ts'
 import { getDataBase, restoreDatabases } from '../../persistence/database.ts'
 
-export const SYMBOLS_REPORT_TYPE = 'symbols'
+export const EXCHANGES_REPORT_TYPE = 'exchanges'
 
 export const usage: Usage = {
-  option: `report --type ${SYMBOLS_REPORT_TYPE}`,
+  option: `report --type ${EXCHANGES_REPORT_TYPE}`,
   arguments: [
-    '[--year <year>] : Year for which the symbols are being reported',
+    '[--year <year>] : Year for which the exchanges are being reported',
     '[--as-json]     : Output as JSON',
   ],
 }
 
-export const reportSymbols = async () => {
+export const reportExchanges = async () => {
   setUsage(usage)
   const year = getOptValue('year')
   const asJson = getOptValue('as-json')
@@ -45,14 +45,14 @@ export const reportSymbols = async () => {
     return year ? t.date.startsWith(year.toString()) : true
   })
 
-  const allSymbols = transactions.map((transaction) => transaction.symbol)
-  const uniqueSymbols = Array.from(new Set(allSymbols)).sort()
+  const allExchanges = transactions.map((transaction) => transaction.exchange)
+  const uniqueExchanges = Array.from(new Set(allExchanges)).sort()
   const inYear = year ? ` in ${year}` : ''
 
-  if (!uniqueSymbols.length && !asJson) {
-    return console.log(`\nNo symbols traded${inYear}\n`)
+  if (!uniqueExchanges.length && !asJson) {
+    return console.log(`\nNo exchanges traded${inYear}\n`)
   }
 
-  const output = asJson ? JSON.stringify(uniqueSymbols) : uniqueSymbols.join(' ')
-  console.log(`\nSymbols traded${inYear}:\n\n${output}\n`)
+  const output = asJson ? JSON.stringify(uniqueExchanges) : uniqueExchanges.join(' ')
+  return console.log(`\nExchanges traded${inYear}:\n\n${output}\n`)
 }

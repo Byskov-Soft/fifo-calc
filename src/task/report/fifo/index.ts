@@ -70,8 +70,8 @@ const processTransactions = async (
 export const usage: Usage = {
   option: `report --type ${FIFO_REPORT_TYPE}`,
   arguments: [
-    '--currency <taxable-currency> : Some columns show values in this currency (converted from USD)',
     '--symbol <symbol>             : The symbol to report on',
+    '[--exchange <exchange>]       : The exchange to report on',
     '[--output-dir <output-dir>]   : Output directory - defaults to the ./report',
   ],
 }
@@ -79,11 +79,18 @@ export const usage: Usage = {
 export const reportFifo = async () => {
   // Resolve task arguments
   setUsage(usage)
-  const currency = getOptValue('currency')
-  const symbol = getOptValue('symbol')
+  const symbolVal = getOptValue('symbol')
+  const exchangeVal = getOptValue('exchange')
   let outputDir = getOptValue('output-dir')
+  const help = getOptValue('help')
+  const symbol = symbolVal ? symbolVal.toUpperCase() : undefined
+  const exchange = exchangeVal ? exchangeVal.toUpperCase() : undefined
 
-  if (!currency || !symbol) {
+  if (help) {
+    showUsageAndExit({ exitWithError: false })
+  }
+
+  if (!symbol) {
     showUsageAndExit()
   }
 
@@ -96,12 +103,44 @@ export const reportFifo = async () => {
   await restoreDatabases()
   const db = getDataBase(DB_FIFO)
 
-  const dbItems = db.getCollection(COLLECTION.TRANSACTION).getByAttribute([
-    { name: 'symbol', value: symbol.toUpperCase() },
+  const query = [
+    { name: 'symbol', value: symbol },
     { name: 'cleared', 'value': false },
-  ])
+  ]
 
-  const transactions = dbItems.map((item) => Transaction.parse(item.object()))
+  if (exchange) {
+    query.push({ name: 'exchange', value: exchange })
+  }
+
+  const dbItems = db.getCollection(COLLECTION.TRANSACTION).getByAttribute(query)
+
+  if (dbItems.length === 0) {
+    console.log(
+      `\nNo transactions found for symbol '${symbol}'${
+        exchange ? ` and exchange '${exchange}'` : ''
+      }\n`,
+    )
+
+    Deno.exit(0)
+  }
+
+  // Parse transactions and check for currency mismatch
+  let currency = ''
+
+  const transactions = dbItems.map((item) => {
+    const transaction = Transaction.parse(item.object())
+
+    if (transaction.tax_currency !== currency) {
+      if (currency === '') {
+        currency = transaction.tax_currency
+      } else {
+        console.error('\nAll transactions must have the same currency\n')
+        Deno.exit(1)
+      }
+    }
+
+    return transaction
+  })
 
   // Process the transactions
   const { fifoRecords, mismatches } = await processTransactions(
@@ -120,7 +159,7 @@ export const reportFifo = async () => {
     await reportprofitAndLossAsFifo(
       fifoRecords,
       symbol.toUpperCase(),
-      currency.toUpperCase(),
+      currency,
       fileId,
       outputDir,
     )

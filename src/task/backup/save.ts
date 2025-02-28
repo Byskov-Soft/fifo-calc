@@ -1,4 +1,4 @@
-import { getOptValue, setUsage } from '../../cmdOptions.ts'
+import { getOptValue, setUsage, showUsageAndExit } from '../../cmdOptions.ts'
 import { getTransactionBackupFilePath } from '../../config.ts'
 import { COLLECTION, DB_FIFO, type Usage, Year } from '../../model/common.ts'
 import { Transaction, transactionColumns } from '../../model/transaction.ts'
@@ -10,20 +10,25 @@ export const BACKUP_SAVE_TYPE = 'save'
 export const usage: Usage = {
   option: `report --type ${BACKUP_SAVE_TYPE}`,
   arguments: [
-    '[--symbol <symbol>]           : Limit to a specific symbol',
-    '[--year-limit <year>]         : Limit to a specific year',
-    '[--oput-dir <output-dir>]     : Output directory - defaults to ./backup',
+    '[--symbol <symbol>]        : Limit to a specific symbol',
+    '[--year <year>]            : Limit to a specific year',
+    '[--oput-dir <output-dir>]  : Output directory - defaults to ./backup',
   ],
 }
 export const saveTransactions = async () => {
   setUsage(usage)
   const symbol = getOptValue('symbol')
-  const yearLimit = getOptValue('year-limit')
+  const year = getOptValue('year')
   let outputDir = getOptValue('output-dir')
+  const help = getOptValue('help')
 
-  if (yearLimit) {
+  if (help) {
+    showUsageAndExit({ exitWithError: false })
+  }
+
+  if (year) {
     // This will throw an error on invalid year
-    Year.parse(yearLimit)
+    Year.parse(year)
   }
 
   if (!outputDir) {
@@ -46,33 +51,35 @@ export const saveTransactions = async () => {
   const transactions = dbItems
     .map((t) => Transaction.parse(t.object()))
     .filter((t) => {
-      return yearLimit ? t.date.startsWith(yearLimit) : true
+      return year ? t.date.startsWith(year) : true
     })
 
   const headers = transactionColumns.join(',')
 
   const records = transactions.map((t) => {
     return [
+      t.t_currency,
+      t.tax_currency,
       t.date,
-      t.exchange,
       t.type,
       t.symbol,
-      t.usd_cost,
+      t.tcur_cost,
       t.item_count,
-      t.usd_conversion_rate,
+      t.tcur_conversion_rate,
       t.symbol_fee,
-      t.usd_fee,
-      t.cur_cost,
-      t.cur_price_per_item,
-      t.cur_fee,
+      t.tcur_fee,
+      t.exchange,
+      t.taxcur_cost,
+      t.taxcur_price_per_item,
+      t.taxcur_fee,
       t.cleared,
       t.row_num,
       t.remaining_item_count,
-      t.remaining_cost,
+      t.taxcur_remaining_cost,
     ].join(',')
   })
 
-  const backupFile = getTransactionBackupFilePath(outputDir, symbol ?? 'all', yearLimit)
+  const backupFile = getTransactionBackupFilePath(outputDir, symbol ?? 'all', year)
   const outputData = [headers, ...records].join('\n')
   await Deno.writeTextFile(backupFile, outputData)
   console.log(`\nTransactions backup was written to\n${backupFile}\n`)

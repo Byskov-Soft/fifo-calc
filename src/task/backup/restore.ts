@@ -1,12 +1,12 @@
 import { parse } from '@std/csv/parse'
 import { z } from 'zod'
 import { getOptValue, setUsage, showUsageAndExit } from '../../cmdOptions.ts'
-import type { Usage, Year } from '../../model/common.ts'
+import { type Usage, Year } from '../../model/common.ts'
 import {
   COLLECTION,
   DB_FIFO,
   ISO8601DateString,
-  Transaction,
+  type Transaction,
   transactionColumns,
   TransctionType,
 } from '../../model/index.ts'
@@ -23,9 +23,9 @@ export const BACKUP_RESTORE_TYPE = 'restore'
 export const usage: Usage = {
   option: `report --type ${BACKUP_RESTORE_TYPE}`,
   arguments: [
-    '--input <csv-file>     : Input CSV file',
-    '[--symbol <symbol>]    : Limit to a specific symbol',
-    '[--year-limit <year>]  : Limit to a specific year',
+    '--input <csv-file>   : Input CSV file',
+    '[--symbol <symbol>]  : Limit to a specific symbol',
+    '[--year <year>]      : Limit to a specific year',
   ],
 }
 const headerLine = transactionColumns.join(',')
@@ -33,7 +33,7 @@ const headerLine = transactionColumns.join(',')
 export const parseCsvToJson = async (
   csvFilePath: string,
   symbol?: string,
-  yearLimit?: Year,
+  year?: Year,
 ): Promise<Transaction[]> => {
   const csvData = await Deno.readTextFile(csvFilePath)
 
@@ -47,27 +47,29 @@ export const parseCsvToJson = async (
   return jsonData
     .map((row) =>
       z.object({
+        t_currency: z.string(),
+        tax_currency: z.string(),
         date: ISO8601DateString,
         type: TransctionType,
         symbol: z.string(),
-        usd_cost: z.string().transform((v: string) => parseFloat(v)),
+        tcur_cost: z.string().transform((v: string) => parseFloat(v)),
         item_count: z.string().transform((v: string) => parseFloat(v)),
-        usd_conversion_rate: z.string().transform((v: string) => parseFloat(v)),
+        tcur_conversion_rate: z.string().transform((v: string) => parseFloat(v)),
         symbol_fee: z.string().transform((v: string) => parseFloat(v)),
-        usd_fee: z.string().transform((v: string) => parseFloat(v)),
+        tcur_fee: z.string().transform((v: string) => parseFloat(v)),
         _id: z.string().default(''),
         exchange: z.string(),
-        cur_cost: z.string().transform((v: string) => parseFloat(v)),
-        cur_price_per_item: z.string().transform((v: string) => parseFloat(v)),
-        cur_fee: z.string().transform((v: string) => parseFloat(v)),
+        taxcur_cost: z.string().transform((v: string) => parseFloat(v)),
+        taxcur_price_per_item: z.string().transform((v: string) => parseFloat(v)),
+        taxcur_fee: z.string().transform((v: string) => parseFloat(v)),
         cleared: z.string().transform((v: string) => v === 'true'),
         row_num: z.string().transform((v: string) => parseInt(v)),
         remaining_item_count: z.string().transform((v: string) => parseFloat(v)),
-        remaining_cost: z.string().transform((v: string) => parseFloat(v)),
+        taxcur_remaining_cost: z.string().transform((v: string) => parseFloat(v)),
       }).parse(row)
     )
     .filter((record) => (
-      (yearLimit ? record.date.startsWith(yearLimit.toString()) : true) &&
+      (year ? record.date.startsWith(year.toString()) : true) &&
       (symbol ? record.symbol === symbol : true)
     ))
 }
@@ -90,14 +92,24 @@ export const restoreTransactions = async () => {
   setUsage(usage)
   const inputCsvFile = getOptValue('input')
   const symbol = getOptValue('symbol')
-  const yearLimit = getOptValue('year-limit')
+  const year = getOptValue('year')
+  const help = getOptValue('help')
+
+  if (help) {
+    showUsageAndExit({ exitWithError: false })
+  }
 
   if (!inputCsvFile) {
     showUsageAndExit()
   }
 
+  if (year) {
+    // This will throw an error on invalid year
+    Year.parse(year)
+  }
+
   await restoreDatabase(DB_FIFO, true)
-  const transactions = await parseCsvToJson(inputCsvFile, symbol, yearLimit)
+  const transactions = await parseCsvToJson(inputCsvFile, symbol, year)
   await addTransactions(transactions)
   console.log(`\nRestored ${transactions.length} transactions\n`)
 }
