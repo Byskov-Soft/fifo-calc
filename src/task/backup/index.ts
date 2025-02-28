@@ -24,7 +24,7 @@ export const backup = async () => {
       break
     }
     default: {
-      showUsageAndExit()
+      showUsageAndExit({ exitWithError: getOptValue('help') === undefined })
     }
   }
 }

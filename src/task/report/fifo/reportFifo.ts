@@ -41,12 +41,12 @@ export const reportprofitAndLossAsFifo = async (
         c.symbol,
         c.item_count,
         c.sell_cost,
-        c.cur_original_buy_cost,
-        c.cur_profit,
-        c.cur_cost_per_item,
-        c.cur_buying_fee,
-        c.cur_selling_fee,
-        c.cur_total_fee,
+        c.taxcur_original_buy_cost,
+        c.taxcur_profit,
+        c.taxcur_cost_per_item,
+        c.taxcur_buying_fee,
+        c.taxcur_selling_fee,
+        c.taxcur_total_fee,
       ].join(',')
     })
 

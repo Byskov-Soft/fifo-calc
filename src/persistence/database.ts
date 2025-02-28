@@ -1,4 +1,5 @@
 import { Database } from '@bysk/jsonfile-db'
+import { getOptValue, setUsage, showUsageAndExit } from '../cmdOptions.ts'
 import { dbFileExtension, fifoCalcDir, getDatabaseFilePath } from '../config.ts'
 import type { DatabaseMap } from '../model/common.ts'
 
@@ -96,14 +97,19 @@ export const restoreDatabases = async () => {
 }
 
 export const reset = async () => {
-  console.log(`Removing all databases...`)
+  if (getOptValue('help')) {
+    setUsage({ option: `reset  : Clears the database`, arguments: [] })
+    showUsageAndExit({ exitWithError: false })
+  }
+
+  console.log(`\nRemoving all databases...\n`)
   const fileNames = await getDatabaseFileNames()
 
   await Promise.all(fileNames.map((fileName) => {
     const filePath = `${fifoCalcDir}/${fileName}`
 
     if (filePath.endsWith(dbFileExtension)) {
-      console.log(`Removing ${filePath} ...`)
+      console.log(`Removing ${filePath} ...\n`)
       return Deno.remove(filePath)
     }
   }))

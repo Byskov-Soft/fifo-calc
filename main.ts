@@ -1,26 +1,29 @@
-import { getArgAt, parseAppOptions, setUsage, showUsageAndExit } from './src/cmdOptions.ts'
+import {
+  getArgAt,
+  getOptValue,
+  parseAppOptions,
+  setUsage,
+  showUsageAndExit,
+} from './src/cmdOptions.ts'
 import { fifoCalcDir } from './src/config.ts'
 import type { Usage } from './src/model/common.ts'
 import { reset } from './src/persistence/database.ts'
 import { backup } from './src/task/backup/index.ts'
-import { convertTasks } from './src/task/convert/index.ts'
-import { importData } from './src/task/import/index.ts'
+import { importTransactions } from './src/task/import/index.ts'
 import { report } from './src/task/report/index.ts'
 import { resetProcessed } from './src/task/resetProcessed.ts'
 import { createDirectory } from './src/util/file.ts'
 
 enum TASK {
-  CONVERT = 'convert',
   IMPORT = 'import',
   REPORT = 'report',
   BACKUP = 'backup',
   RESET_PROCESSED = 'reset-processed',
   RESET = 'reset',
-  HELP = 'help',
 }
 
 const usage: Usage = {
-  option: '(convert | import | report | backup | reset-processed | reset) <options>',
+  option: '(import | report | backup | reset-processed | reset)',
   arguments: [],
 }
 
@@ -40,12 +43,8 @@ await createDirectory({
 setUsage(usage)
 
 switch (getArgAt(0)) {
-  case TASK.CONVERT: {
-    await convertTasks()
-    break
-  }
   case TASK.IMPORT: {
-    await importData()
+    await importTransactions()
     break
   }
   case TASK.REPORT: {
@@ -64,11 +63,7 @@ switch (getArgAt(0)) {
     await reset()
     break
   }
-  case TASK.HELP: {
-    showUsageAndExit({ exitWithError: false })
-    break
-  }
   default: {
-    showUsageAndExit()
+    showUsageAndExit({ exitWithError: getOptValue('help') === undefined })
   }
 }

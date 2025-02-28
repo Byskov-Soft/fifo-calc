@@ -44,15 +44,17 @@ export const hasArg = (arg: string) => {
 }
 
 export const setUsage = (usage: Usage) => {
+  const option = `Usage: fifo-calc ${usage.option} <options> [--help] [--debug]`
+
   if (usage.arguments.length) {
     usageString = [
-      `Usage: fifo-calc ${usage.option} <options> [--debug]`,
+      option,
       '',
       'Options:',
-      ...usage.arguments.map((arg) => `  ${arg}\n`),
+      ...usage.arguments.map((arg) => `  ${arg}`),
     ].join('\n')
   } else {
-    usageString = `\nUsage: fifo-calc ${usage.option}\n`
+    usageString = option
   }
 }
 
@@ -66,7 +68,7 @@ export const showUsageAndExit = (params: UsageParams = { extras: null, exitWithE
   console.log('---------------------------------')
 
   if (exitWithError) {
-    console.error(`\nInvalid commandline options or arguments`)
+    console.error(`Invalid commandline options or arguments`)
   }
 
   console.log(usageString)

@@ -9,10 +9,10 @@ trading.
 
 Here are some example rows from a report:
 
-| Sell Date           | Buy Date            | Exchange | Symbol | Item Count | Sell cost (EUR) | Original buy cost (EUR) | Profit (EUR) | Cost per item (EUR) | Buying fee (EUR) | Selling fee (EUR) | Total fee (EUR) |
-| ------------------- | ------------------- | -------- | ------ | ---------- | --------------- | ----------------------- | ------------ | ------------------- | ---------------- | ----------------- | --------------- |
-| 2024-11-08 07:47:00 | 2024-12-03 07:47:00 | Bybit    | SUI    | 22.14      | 47.3281         | 42.1976                 | 5.1304       | 2.1377              | 0.0473           | 0.0473            | 0.0946          |
-| 2024-11-08 07:47:00 | 2024-12-14 06:55:00 | Bybit    | SUI    | 22.46      | 47.5805         | 42.8075                 | 4.773        | 2.1185              | 0.0476           | 0.0476            | 0.0952          |
+| Sell Date           | Buy Date            | Exchange | Symbol | Item Count | Sell cost (EUR) | Buy cost (EUR) | Profit (EUR) | Sell cost per item (EUR) | Buy fee (EUR) | Sell fee (EUR) | Total fee (EUR) |
+| ------------------- | ------------------- | -------- | ------ | ---------- | --------------- | -------------- | ------------ | ------------------------ | ------------- | -------------- | --------------- |
+| 2024-11-08 07:47:00 | 2024-12-03 07:47:00 | BYBIT    | SUI    | 22.14      | 47.3281         | 42.1976        | 5.1304       | 2.1377                   | 0.0473        | 0.0473         | 0.0946          |
+| 2024-11-08 07:47:00 | 2024-12-14 06:55:00 | BYBIT    | SUI    | 22.46      | 47.5805         | 42.8075        | 4.773        | 2.1185                   | 0.0476        | 0.0476         | 0.0952          |
 
 The FIFO report is in CSV format (comma separated values), that can be imported to Google Sheets,
 Excel and other similar apps.
@@ -50,23 +50,41 @@ and buyng prices in the order the apples were bought and sold.
 Another accounting principle is LIFO (last-in-first-out) which picks transactions in the reverse
 order. It is less used, although still accepted by many tax authorities.
 
-## Transactions in USD and taxation in another currency
+## Fifo-calc crypto suite
 
-Foremost this tool is made for the case where trading is done using USD, but taxation is in another
-currency. This also means, that USD rates for the secondary currency must be provided.
+`fifo-calc` is part of a "crypto suite", consisting of the following tools:
 
-A USD only scenario is also supported. For that we simply set the exchange rate to 1. In principle,
-this will also work where transactions and taxation is in the same non-USD currency, although some
-changes to the output headers must be made. It should, however be easy to fix in a text editor or a
-sheet app (e.g. Excel). Anyway, a better solution for this scenario is currently in the works.
+| Tool                                                                      | Description                                                                                                      |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| [fifo-calc](https://github.com/Byskov-Soft/fifo-calc)                     | Creates FIFO reports based on buy and sell transactions to be used for reporting capital gains.                  |
+| [fifo-calc-converter](https://github.com/Byskov-Soft/fifo-calc-converter) | Converts transaction (CSV) files from various crypto exchanges, to a format that can be imported by `fifo-calc`. |
+| [fifo-calc-rates](https://github.com/Byskov-Soft/fifo-calc-rates)         | Creates currency rate files to be used with `fifo-calc-converter`.                                               |
+
+## Transactions Currency vs Taxation Currency
+
+This tool supports cases where trading is done in one currency (typically USD), but taxation is in
+another. If this applies to you, you need to provide a currency conversion rate for each
+transaction.
+
+A fixed rate can be applied, e.g. the rate on the report creation date, but you should check the tax
+rules in you jurisdiction to see what rules apply. Note that depending on the rate changes, using a
+fixed rate may or may not be advantageous.
+
+**NOTE:** If you only deal with a single currency, you can simply use a fixed rate of `1`.
+
+**NOTE:** If you use the [fifo-calc-converter](https://github.com/Byskov-Soft/fifo-calc-converter)
+in conjunction with this tool, you may also be interested in the
+[fifo-calc-rates](https://github.com/Byskov-Soft/fifo-calc-rates) tool that can help you create
+conversion rates (e.g. USD to EUR) for a whole year. The rates would be used to calculate costs in
+your local/taxable currency.
 
 ## Fractional transactions
 
 As crypto is often bought in fractions (you buy a part of an item), numbers are not rounded before
 it is really necessary. Up to 10 decimals are used (depending on the situation). The number of
-bought and sold items are, however, not rounded as that cannot always be shown properly. Take
-Bitcoin (BTC) as the example. If you buy $10 of BTC you will own a fraction that could have four or
-five zero decimals (e.g. `0.000015831`).
+bought and sold items are, however, not rounded as that can result in very inaccurate reports. Take
+Bitcoin (BTC) as the example. If you buy for `$100` and get `BTC 0.0016704507`, rounding this number
+will give you an amount that could be off by `$2`
 
 # Installation
 
@@ -91,12 +109,12 @@ five zero decimals (e.g. `0.000015831`).
 If your transactions are available in the supported format, creating FIFO reports takes 2 steps:
 
 1. [Import transactions](#importing-transactions) from a CSV file
-   - Transactions are saved to a JSON file DB located at `<HOME-DIR>/.fifo-calc/fifo.db.json`
+   - Transactions are saved to a JSON file DB located at `<HOME>/.fifo-calc/fifo.db.json`
 
 1. [Create FIFO reports](#creating-fifo-reports) per symbol (BTC, ETH, etc.)
    - Reports are saved to a user defined or default output directory
 
-**Please note**:
+**IMPORTANT - MUST READ**:
 
 > The database is not meant for any long-term storage. The idea is that when it is time to report on
 > capital gains for the past year, you will have a session where you import the relevant records,
@@ -105,31 +123,35 @@ If your transactions are available in the supported format, creating FIFO report
 > The database is not very efficient or safe, and keeping records spanning multiple years may result
 > in very slow performance or cause other issues.
 >
-> Instead of keeping the database intact, it is better to use the
-> [backup - save and restore](docs/BACKUPS.md) commands.
+> An import/export feature is available (see
+> [Database backup - Save and Restore](./docs/BACKUPS.md)). Use it for saving or restoring the
+> database records. Alternatively, keep your original (pre-import) files. Either way is good.
 
 ## Importing transactions
 
 ### Import command
 
 ```
-Usage: fifo-calc import --type transactions <options> [--debug]
+Usage: fifo-calc import <options> [--help] [--debug]
 
 Options:
   --exchange <exchange-name> : Name of the exchange transactions originate from
-
   --input <input-csv-file>   : A CSV file matching the fifo-calc input format
-
-  [--year-limit <year>]      : Limit imports to a specific year
+  [--year <year>]            : Limit imports to a specific year
 ```
 
-Example: `fifo-calc import --type transactions --exchange Binance --input ./binanceTransactions.csv`
+Example: `fifo-calc import --exchange Binance --input ./binanceTransactions.csv`
 
-## About importing
+### About importing
 
 - Transactions should be available in CSV files
 
-- Typically you would create those by exporting from Excel or other "sheet" apps.
+- You can create those by exporting from Excel or other "sheet" apps.
+
+  - If you already have CSV files from an exchange, you need to convert those to a format compatible
+    with fifo-calc. You may want to take a look at the
+    [fifo-calc-converter](https://github.com/Byskov-Soft/fifo-calc-converter) tool, which could be
+    useful to you.
 
 - If your taxable currency is not USD, a lot of work may go into finding the conversion rate for
   specific dates.
@@ -146,23 +168,24 @@ Example: `fifo-calc import --type transactions --exchange Binance --input ./bina
 Here are a few example lines from a Fifo-calc compatible input CSV file.
 
 ```c
-date,type,symbol,usd_cost,item_count,usd_conversion_rate,symbol_fee,usd_fee
-2024-10-17 15:51:00,B,BTC,169.6449177,0.002511,1.0866,0.000002511,0
-2024-10-17 15:57:00,B,BTC,8.7828832,0.00013,1.0866,1.3e-7,0
-2024-10-21 06:37:00,S,SOL,247.08672,1.448,1.0853,0,0.24708672
+t_currency,tax_currency,date,type,symbol,tcur_cost,item_count,tcur_conversion_rate,symbol_fee,tcur_fee
+USD,EUR,2024-09-23T12:30:32.000Z,B,RENDER,105.31035,16.35,1.1119,0.01635,0
+USD,EUR,2024-09-25T05:41:22.000Z,S,RENDER,49.059,7.9,1.1194,0,0.049059
 ```
 
 The following columns are mandatory (others will be ignored):
 
-| Column              | Description                                                                                                                                                                         |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| date                | When did you buy or sell? Different date formats will work as long as they can be parsed by JavaScript. Preferably use an ISO format such as `YYYY-MM-DD HH:mm:ss`                  |
-| symbol              | What did you buy? BTC, SOL, etc                                                                                                                                                     |
-| usd_cost            | What was the USD price (fee excluded) of the purchase?                                                                                                                              |
-| item_count          | How many did you buy (this may be fractional)?                                                                                                                                      |
-| usd_conversion_rate | How much did the taxable current cost in USD on the transaction date? Example: on `October 17th 2024` the cost of `1 EUR` was `1.0866 USD`. If the taxable currency is USD put `1`. |
-| symbol_fee          | Eventual fee in the "symbol" currency or "0"                                                                                                                                        |
-| usd_fee             | Eventual fee in USD or "0"                                                                                                                                                          |
+| Column               | Description                                                                                                                                                                                                              |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| t_currency           | Transaction currency                                                                                                                                                                                                     |
+| tax_currency         | Taxable currency                                                                                                                                                                                                         |
+| date                 | When did you buy or sell? Different date formats will work as long as they can be parsed by JavaScript. Preferably use an ISO format such as `YYYY-MM-DD HH:mm:ss`                                                       |
+| symbol               | What did you buy? BTC, SOL, etc                                                                                                                                                                                          |
+| tcur_cost            | What was the transaction price (in transaction currency, fee excluded) of the purchase?                                                                                                                                  |
+| item_count           | How many did you buy (this may be fractional)?                                                                                                                                                                           |
+| tcur_conversion_rate | How much did the taxable currency cost in the transaction currency on the transaction date? Example: on `October 17th 2024` the cost of `1 EUR` was `1.0866 USD`. If transaction/taxable currency is the same - put `1`. |
+| symbol_fee           | Eventual fee in the "symbol" currency or `0`                                                                                                                                                                             |
+| tcur_fee             | Eventual fee in the transaction currency or `0`                                                                                                                                                                          |
 
 ### Fixing mistakes and re-importing
 
@@ -176,8 +199,8 @@ If you already have CSV files from an exchange, you could convert the data to a 
 format.
 
 - If your files are not too big, this could be an obvious job for ChatGTP or other AI.
-- Fifo-calc provide converters for some record types from a few exchanges such as **Bybit** and
-  **Pionex** (see [Conversion of exchange CSV files](docs/CSV_CONVERSION.md)
+- Alternatively use the [fifo-calc-converter](https://github.com/Byskov-Soft/fifo-calc-converter)
+  tool
 
 ## Create FIFO reports
 
@@ -215,7 +238,7 @@ The FIFO report command will...
 
   - If you need a report for a specific year, you need to make sure you have
 
-    1. only imported sell transactions for that year (support for a --year-limit option is planned)
+    1. only imported sell transactions for that year (support for a --year option is planned)
     1. imported all previous buy transactions (that have not yet been cleared [^1] )
 
 - skip sell transactions that don't have corresponding buy transactions. Partially covered sell
@@ -262,19 +285,14 @@ Description of the output columns:
 
 # More documumentation
 
-(All of these docs are currently empty... content is being written)
-
-- [Fifo command overview](docs/COMMANDS.md)
-- [Database backups - Save and Restore](docs/BACKUPS.md)
-- [Conversion of exchange CSV files](docs/CSV_CONVERSION.md)
-- [Exchange rate import (for CSV conversion)](docs/RATE_IMPORT.md)
+- [Fifo-calc command overview](docs/COMMANDS.md)
 
 # Planned features
 
 - Better help provided by `fifo --help`
 
-- Use `--year-limit` flag with the `report --type fifo` command, to skip sell transactions that are
-  not in the provided year (buy transactions will never be skipped)
+- Use `--year` flag with the `report --type fifo` command, to skip sell transactions that are not in
+  the provided year (buy transactions will never be skipped)
 - Release converters (from Exchange CSV to Fifo-calc input format) as separate binaries
   - This will make it easier to copy existing converters and modify them for your own purpose
 - Support for a single currency (if transaction and taxation currency is the same) that is not USD

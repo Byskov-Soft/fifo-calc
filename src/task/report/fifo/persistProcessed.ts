@@ -20,7 +20,7 @@ export const persistProcessed = (processed: Transaction[]) => {
 
       const tx: Transaction = {
         ...record,
-        remaining_cost: rec.remaining_cost,
+        taxcur_remaining_cost: rec.taxcur_remaining_cost,
         remaining_item_count: rec.remaining_item_count,
         cleared: rec.cleared,
       }
