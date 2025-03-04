@@ -1,6 +1,6 @@
 # Fifo-calc Commands
 
-## Symbols
+## Symbols Report
 
 Get a list of symbols used in imported transactions
 
@@ -12,7 +12,7 @@ Options:
   [--as-json]     : Output as JSON
 ```
 
-## Exchanges
+## Exchanges Report
 
 Get a list of exchanges used in imported transactions
 
@@ -24,7 +24,22 @@ Options:
   [--as-json]     : Output as JSON
 ```
 
-## Fifo
+## Import Transactions
+
+Import transactions from a CSV file
+
+```
+fifo-calc import <options> [--help] [--debug]
+
+Options:
+  --exchange <exchange-name> : Name of the exchange transactions originate from
+  --input <input-csv-file>   : A CSV file matching the fifo-calc input format
+  [--year <year>]            : Limit imports to a specific year
+```
+
+Example: `fifo-calc import --exchange Binance --input ./binanceTransactions.csv`
+
+## Fifo Report
 
 Generate a fifo report based on imported transactions.
 
@@ -42,14 +57,14 @@ Options:
   [--output-dir <output-dir>]   : Output directory - defaults to the ./report
 ```
 
-## Database backup
+## Database Backup
 
 ### Save
 
 Save the database content to a file
 
 ```
-fifo-calc report --type save <options> [--help] [--debug]
+fifo-calc backup --type save <options> [--help] [--debug]
 
 Options:
   [--symbol <symbol>]        : Limit to a specific symbol
@@ -62,7 +77,7 @@ Options:
 Restore transaction to an existing or new database (be aware that duplicates are NOT checked).
 
 ```
-fifo-calc report --type restore <options> [--help] [--debug]
+fifo-calc backup --type restore <options> [--help] [--debug]
 
 Options:
   --input <csv-file>   : Input CSV file

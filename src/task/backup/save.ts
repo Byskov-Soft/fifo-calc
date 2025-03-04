@@ -8,7 +8,7 @@ import { createDirectory } from '../../util/file.ts'
 export const BACKUP_SAVE_TYPE = 'save'
 
 export const usage: Usage = {
-  option: `report --type ${BACKUP_SAVE_TYPE}`,
+  option: `backup --type ${BACKUP_SAVE_TYPE}`,
   arguments: [
     '[--symbol <symbol>]        : Limit to a specific symbol',
     '[--year <year>]            : Limit to a specific year',

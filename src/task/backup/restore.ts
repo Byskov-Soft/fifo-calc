@@ -21,7 +21,7 @@ import { generateUUID } from '../../util/uuid.ts'
 export const BACKUP_RESTORE_TYPE = 'restore'
 
 export const usage: Usage = {
-  option: `report --type ${BACKUP_RESTORE_TYPE}`,
+  option: `backup --type ${BACKUP_RESTORE_TYPE}`,
   arguments: [
     '--input <csv-file>   : Input CSV file',
     '[--symbol <symbol>]  : Limit to a specific symbol',
