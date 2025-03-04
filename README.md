@@ -161,6 +161,10 @@ If your transactions are available in the supported format, creating FIFO report
 > The database is not very efficient or safe, and keeping records spanning multiple years may result
 > in very slow performance or cause other issues.
 >
+> We use a lightweight JSON-based database to keep the tool easy to use without requiring additional
+> database software. While a more permanent database solution might be considered in the future, the
+> current approach ensures a low barrier to entry for users.
+>
 > An save/restore feature is available (see
 > [Database backup](./docs/COMMANDS.md#database-backup)). Use it for saving or restoring the
 > database records. Alternatively, keep your original (pre-import) files. Either way is good.
