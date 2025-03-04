@@ -35,11 +35,11 @@ USD,EUR,2024-09-25T05:41:22.000Z,S,RENDER,49.059,7.9,1.1194,0,0.049059
 | -------------------- | --------------------------------------------------------------------------- |
 | t_currency           | Transaction currency                                                        |
 | tax_currency         | Taxable currency                                                            |
-| date                 | Transaction date (preferably in ISO format)                                |
+| date                 | Transaction date (preferably in ISO format)                                 |
 | symbol               | Traded symbol (e.g., BTC, ETH)                                              |
 | tcur_cost            | Transaction price in transaction currency (fee excluded)                    |
 | item_count           | Number of items bought/sold (can be fractional)                             |
-| tcur_conversion_rate | Conversion rate between transaction and taxable currency                    |
+| tcur_conversion_rate | Conversion rate between transaction and taxable currency. Example: Transaction currency is USD, Taxable currency is EUR. If the price of 1 EUR is 1.1119 USD, then the tcur_conversion_rate is 1.1119 |
 | symbol_fee           | Fee in the symbol currency (0 if none)                                      |
 | tcur_fee             | Fee in the transaction currency (0 if none)                                 |
 
